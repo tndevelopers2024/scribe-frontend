@@ -54,15 +54,28 @@ const SuperAdminDashboard = () => {
             } else if (type === 'lead') {
                 res = await axios.post(API_ENDPOINTS.LEAD_FACULTY, leadForm, config);
                 setLeadForm({ name: '', email: '', collegeId: '' });
-                toast.success(res.data.message || 'Lead Faculty created successfully');
+                // Show different toast based on email status
+                if (res.data.emailSent) {
+                    toast.success(res.data.message || 'Lead Faculty created and email sent successfully');
+                } else {
+                    toast.error(res.data.message || 'Lead Faculty created but email failed to send', { duration: 6000 });
+                }
             } else if (type === 'faculty') {
                 res = await axios.post(API_ENDPOINTS.FACULTY, facultyForm, config);
                 setFacultyForm({ name: '', email: '', leadFacultyId: '' });
-                toast.success(res.data.message || 'Faculty created successfully');
+                if (res.data.emailSent) {
+                    toast.success(res.data.message || 'Faculty created and email sent successfully');
+                } else {
+                    toast.error(res.data.message || 'Faculty created but email failed to send', { duration: 6000 });
+                }
             } else if (type === 'student') {
                 res = await axios.post(API_ENDPOINTS.STUDENT, studentForm, config);
                 setStudentForm({ name: '', email: '', collegeId: '' });
-                toast.success(res.data.message || 'Student created successfully');
+                if (res.data.emailSent) {
+                    toast.success(res.data.message || 'Student created and email sent successfully');
+                } else {
+                    toast.error(res.data.message || 'Student created but email failed to send', { duration: 6000 });
+                }
             }
             fetchData();
         } catch (error) {
