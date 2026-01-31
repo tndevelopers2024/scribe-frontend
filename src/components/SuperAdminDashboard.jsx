@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import AuthContext from '../context/AuthContext';
+import { toast } from 'react-hot-toast';
 import { API_ENDPOINTS } from '../config/constants';
 import { FaChartPie, FaUniversity, FaChalkboardTeacher, FaUserTie, FaUserGraduate, FaArrowRight, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
 
@@ -22,7 +23,6 @@ const SuperAdminDashboard = () => {
     const [leadForm, setLeadForm] = useState({ name: '', email: '', collegeId: '' });
     const [facultyForm, setFacultyForm] = useState({ name: '', email: '', leadFacultyId: '' });
     const [studentForm, setStudentForm] = useState({ name: '', email: '', collegeId: '' });
-    const [message, setMessage] = useState('');
 
     const fetchData = async () => {
         try {
@@ -44,27 +44,29 @@ const SuperAdminDashboard = () => {
 
     const handleSubmit = async (e, type) => {
         e.preventDefault();
-        setMessage('');
         const config = { headers: { Authorization: `Bearer ${user.token}` } };
         try {
             let res;
             if (type === 'college') {
                 res = await axios.post(API_ENDPOINTS.COLLEGE, collegeForm, config);
                 setCollegeForm({ name: '', location: '' });
+                toast.success(res.data.message || 'College created successfully');
             } else if (type === 'lead') {
                 res = await axios.post(API_ENDPOINTS.LEAD_FACULTY, leadForm, config);
                 setLeadForm({ name: '', email: '', collegeId: '' });
+                toast.success(res.data.message || 'Lead Faculty created successfully');
             } else if (type === 'faculty') {
                 res = await axios.post(API_ENDPOINTS.FACULTY, facultyForm, config);
                 setFacultyForm({ name: '', email: '', leadFacultyId: '' });
+                toast.success(res.data.message || 'Faculty created successfully');
             } else if (type === 'student') {
                 res = await axios.post(API_ENDPOINTS.STUDENT, studentForm, config);
                 setStudentForm({ name: '', email: '', collegeId: '' });
+                toast.success(res.data.message || 'Student created successfully');
             }
-            setMessage(res.data.message);
             fetchData();
         } catch (error) {
-            setMessage(error.response?.data?.message || `Error adding ${type}`);
+            toast.error(error.response?.data?.message || `Error adding ${type}`);
         }
     };
 
@@ -104,12 +106,6 @@ const SuperAdminDashboard = () => {
             {/* Main Content Area */}
             <div className="flex-1 w-full">
                 <div className="bg-transparent">
-                    {message && (
-                        <div className={`p-4 rounded-xl text-center font-medium shadow-sm animate-fade-in mb-6 flex items-center justify-center gap-2 ${message.includes('success') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                            {message.includes('success') ? <FaCheckCircle /> : <FaExclamationCircle />}
-                            {message}
-                        </div>
-                    )}
 
                     <div className="transition-all duration-500 ease-in-out">
                         {activeTab === 'overview' && (
