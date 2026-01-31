@@ -1,0 +1,250 @@
+import { useState, useEffect, useContext } from 'react';
+import axios from 'axios';
+import AuthContext from '../context/AuthContext';
+import { API_ENDPOINTS } from '../config/constants';
+import { FaChartPie, FaUniversity, FaChalkboardTeacher, FaUserTie, FaUserGraduate, FaArrowRight, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
+
+import DashboardActivity from './admin/DashboardActivity';
+import CollegeHierarchy from './admin/CollegeHierarchy';
+
+const SuperAdminDashboard = () => {
+    const { user } = useContext(AuthContext);
+    const [colleges, setColleges] = useState([]);
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('overview');
+
+    // Overview Sub-tabs
+    const [overviewTab, setOverviewTab] = useState('activity'); // 'activity' or 'hierarchy'
+
+    // Forms State
+    const [collegeForm, setCollegeForm] = useState({ name: '', location: '' });
+    const [leadForm, setLeadForm] = useState({ name: '', email: '', collegeId: '' });
+    const [facultyForm, setFacultyForm] = useState({ name: '', email: '', leadFacultyId: '' });
+    const [studentForm, setStudentForm] = useState({ name: '', email: '', collegeId: '' });
+    const [message, setMessage] = useState('');
+
+    const fetchData = async () => {
+        try {
+            const config = { headers: { Authorization: `Bearer ${user.token}` } };
+            const collegesRes = await axios.get(API_ENDPOINTS.COLLEGES, config);
+            const usersRes = await axios.get(API_ENDPOINTS.USERS, config); // Get all users
+            setColleges(collegesRes.data);
+            setUsers(usersRes.data);
+            setLoading(false);
+        } catch (error) {
+            console.error(error);
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const handleSubmit = async (e, type) => {
+        e.preventDefault();
+        setMessage('');
+        const config = { headers: { Authorization: `Bearer ${user.token}` } };
+        try {
+            let res;
+            if (type === 'college') {
+                res = await axios.post(API_ENDPOINTS.COLLEGE, collegeForm, config);
+                setCollegeForm({ name: '', location: '' });
+            } else if (type === 'lead') {
+                res = await axios.post(API_ENDPOINTS.LEAD_FACULTY, leadForm, config);
+                setLeadForm({ name: '', email: '', collegeId: '' });
+            } else if (type === 'faculty') {
+                res = await axios.post(API_ENDPOINTS.FACULTY, facultyForm, config);
+                setFacultyForm({ name: '', email: '', leadFacultyId: '' });
+            } else if (type === 'student') {
+                res = await axios.post(API_ENDPOINTS.STUDENT, studentForm, config);
+                setStudentForm({ name: '', email: '', collegeId: '' });
+            }
+            setMessage(res.data.message);
+            fetchData();
+        } catch (error) {
+            setMessage(error.response?.data?.message || `Error adding ${type}`);
+        }
+    };
+
+    // Data Filtering for Dropdowns
+    const leadFaculties = users.filter(u => u.role === 'Lead Faculty');
+    const faculties = users.filter(u => u.role === 'Faculty');
+
+    if (loading) return <div className="flex justify-center p-8"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-purple"></div></div>;
+
+    const TabButton = ({ id, label, icon: Icon }) => (
+        <button
+            onClick={() => setActiveTab(id)}
+            className={`w-full text-left px-6 py-4 rounded-xl font-medium transition-all duration-300 flex items-center gap-3 ${activeTab === id ? 'bg-gradient-to-r from-brand-purple to-brand-pink text-white shadow-md' : 'text-gray-600 hover:bg-gray-50 hover:pl-8'}`}
+        >
+            <span className="text-xl"><Icon /></span>
+            <span>{label}</span>
+            {activeTab === id && <span className="ml-auto text-white/50"><FaArrowRight /></span>}
+        </button>
+    );
+
+    return (
+        <div className="flex flex-col md:flex-row gap-8 max-w-8xl mx-auto items-start">
+            {/* Sidebar Navigation */}
+            <div className="w-full md:w-72 flex-shrink-0">
+                <div className="bg-white rounded-2xl shadow-xl p-6 sticky top-8">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 px-2">Menu</h3>
+                    <div className="space-y-2">
+                        <TabButton id="overview" label="Overview" icon={FaChartPie} />
+                        <TabButton id="addCollege" label="Add New College" icon={FaUniversity} />
+                        <TabButton id="addLead" label="Add Lead Faculty" icon={FaUserTie} />
+                        <TabButton id="addFaculty" label="Add Faculty" icon={FaChalkboardTeacher} />
+                        <TabButton id="addStudent" label="Add Student" icon={FaUserGraduate} />
+                    </div>
+                </div>
+            </div>
+
+            {/* Main Content Area */}
+            <div className="flex-1 w-full">
+                <div className="bg-transparent">
+                    {message && (
+                        <div className={`p-4 rounded-xl text-center font-medium shadow-sm animate-fade-in mb-6 flex items-center justify-center gap-2 ${message.includes('success') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            {message.includes('success') ? <FaCheckCircle /> : <FaExclamationCircle />}
+                            {message}
+                        </div>
+                    )}
+
+                    <div className="transition-all duration-500 ease-in-out">
+                        {activeTab === 'overview' && (
+                            <div className="space-y-6">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                                        <FaChartPie className="text-brand-purple" /> Dashboard Overview
+                                    </h2>
+                                    {/* Sub-tabs switch */}
+                                    <div className="bg-white p-1 rounded-xl shadow-sm border border-gray-100 flex">
+                                        <button
+                                            onClick={() => setOverviewTab('activity')}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${overviewTab === 'activity' ? 'bg-brand-purple text-white shadow-md' : 'text-gray-500 hover:text-gray-700'}`}
+                                        >
+                                            Activity Updates
+                                        </button>
+                                        <button
+                                            onClick={() => setOverviewTab('hierarchy')}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${overviewTab === 'hierarchy' ? 'bg-brand-purple text-white shadow-md' : 'text-gray-500 hover:text-gray-700'}`}
+                                        >
+                                            College Hierarchy
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {overviewTab === 'activity' ? (
+                                    <DashboardActivity users={users} />
+                                ) : (
+                                    <CollegeHierarchy colleges={colleges} users={users} />
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === 'addCollege' && (
+                            <form onSubmit={(e) => handleSubmit(e, 'college')} className="bg-white p-8 rounded-2xl shadow-xl">
+                                <h3 className="font-bold text-2xl text-gray-800 text-brand-purple mb-6 border-b pb-4">Add New College</h3>
+                                <div className="p-4 bg-brand-purple/5 rounded-xl mb-6 border border-brand-purple/10">
+                                    <h4 className="font-semibold text-brand-purple mb-4 flex items-center gap-2">
+                                        <FaUniversity className="text-xl" /> College Details
+                                    </h4>
+                                    <div className="grid grid-cols-1 gap-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">College Name</label>
+                                            <input type="text" placeholder="e.g. Engineering College of Tech" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none transition-all" value={collegeForm.name} onChange={e => setCollegeForm({ ...collegeForm, name: e.target.value })} required />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                                            <input type="text" placeholder="e.g. New York, USA" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none transition-all" value={collegeForm.location} onChange={e => setCollegeForm({ ...collegeForm, location: e.target.value })} required />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="submit" className="w-full bg-gradient-to-r from-brand-purple to-brand-pink text-white py-4 rounded-xl hover:opacity-95 transition-all font-bold shadow-lg transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2">
+                                    <FaCheckCircle /> Create College
+                                </button>
+                            </form>
+                        )}
+
+                        {activeTab === 'addLead' && (
+                            <form onSubmit={(e) => handleSubmit(e, 'lead')} className="bg-white p-8 rounded-2xl shadow-xl">
+                                <h3 className="font-bold text-2xl text-gray-800 mb-6">Add Lead Faculty (Existing College)</h3>
+                                <div className="space-y-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                        <input type="text" placeholder="Name" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={leadForm.name} onChange={e => setLeadForm({ ...leadForm, name: e.target.value })} required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                                        <input type="email" placeholder="Email" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={leadForm.email} onChange={e => setLeadForm({ ...leadForm, email: e.target.value })} required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Assign to College</label>
+                                        <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none bg-white" value={leadForm.collegeId} onChange={e => setLeadForm({ ...leadForm, collegeId: e.target.value })} required>
+                                            <option value="">Select College</option>
+                                            {colleges.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <button type="submit" className="w-full bg-brand-purple text-white py-3 rounded-xl hover:opacity-90 transition font-bold shadow-md">Assign Lead Faculty</button>
+                                </div>
+                            </form>
+                        )}
+
+                        {activeTab === 'addFaculty' && (
+                            <form onSubmit={(e) => handleSubmit(e, 'faculty')} className="bg-white p-8 rounded-2xl shadow-xl">
+                                <h3 className="font-bold text-2xl text-gray-800 mb-6">Add Faculty</h3>
+                                <div className="space-y-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                        <input type="text" placeholder="Name" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={facultyForm.name} onChange={e => setFacultyForm({ ...facultyForm, name: e.target.value })} required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                                        <input type="email" placeholder="Email" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={facultyForm.email} onChange={e => setFacultyForm({ ...facultyForm, email: e.target.value })} required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Reporting To (Lead Faculty)</label>
+                                        <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none bg-white" value={facultyForm.leadFacultyId} onChange={e => setFacultyForm({ ...facultyForm, leadFacultyId: e.target.value })} required>
+                                            <option value="">Select Reporting Lead Faculty</option>
+                                            {leadFaculties.map(l => <option key={l._id} value={l._id}>{l.name} ({l.email})</option>)}
+                                        </select>
+                                    </div>
+                                    <button type="submit" className="w-full bg-brand-purple text-white py-3 rounded-xl hover:opacity-90 transition font-bold shadow-md">Add Faculty</button>
+                                </div>
+                            </form>
+                        )}
+
+                        {activeTab === 'addStudent' && (
+                            <form onSubmit={(e) => handleSubmit(e, 'student')} className="bg-white p-8 rounded-2xl shadow-xl">
+                                <h3 className="font-bold text-2xl text-gray-800 mb-6">Add Student</h3>
+                                <div className="space-y-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                        <input type="text" placeholder="Name" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={studentForm.name} onChange={e => setStudentForm({ ...studentForm, name: e.target.value })} required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                                        <input type="email" placeholder="Email" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={studentForm.email} onChange={e => setStudentForm({ ...studentForm, email: e.target.value })} required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">College</label>
+                                        <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none bg-white" value={studentForm.collegeId} onChange={e => setStudentForm({ ...studentForm, collegeId: e.target.value })} required>
+                                            <option value="">Select College</option>
+                                            {colleges.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                                        </select>
+                                        <p className="text-xs text-gray-500 mt-1">Student will be automatically assigned to a faculty in this college</p>
+                                    </div>
+                                    <button type="submit" className="w-full bg-brand-purple text-white py-3 rounded-xl hover:opacity-90 transition font-bold shadow-md">Add Student</button>
+                                </div>
+                            </form>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default SuperAdminDashboard;
