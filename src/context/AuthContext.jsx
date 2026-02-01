@@ -14,6 +14,25 @@ export const AuthProvider = ({ children }) => {
             setUser(JSON.parse(storedUser));
         }
         setLoading(false);
+
+        // Axios Interceptor for 401 Unauthorized
+        const interceptor = axios.interceptors.response.use(
+            (response) => response,
+            (error) => {
+                if (error.response && error.response.status === 401) {
+                    logout();
+                    // Avoid redirect loops if already on login
+                    if (window.location.pathname !== '/login') {
+                        window.location.href = '/login';
+                    }
+                }
+                return Promise.reject(error);
+            }
+        );
+
+        return () => {
+            axios.interceptors.response.eject(interceptor);
+        };
     }, []);
 
     const login = async (email, password) => {
