@@ -6,6 +6,8 @@ export const API_ENDPOINTS = {
     // Auth
     LOGIN: `${API_URL}/api/auth/login`,
     CHANGE_PASSWORD: `${API_URL}/api/auth/change-password`,
+    FORGOT_PASSWORD: `${API_URL}/api/auth/forgot-password`,
+    RESET_PASSWORD: `${API_URL}/api/auth/reset-password`,
 
     // Profile
     PROFILE: `${API_URL}/api/profile`,
@@ -38,4 +40,10 @@ export const API_ENDPOINTS = {
     FACULTY_STUDENTS: `${API_URL}/api/faculty/students`,
     FACULTY_STUDENT_PORTFOLIO: (id) => `${API_URL}/api/faculty/student/${id}`,
     FACULTY_REVIEW: `${API_URL}/api/faculty/review`,
+
+    // Super Admin Management
+    DELETE_COLLEGE: (id) => `${API_URL}/api/admin/college/${id}`,
+    DELETE_USER: (id) => `${API_URL}/api/admin/user/${id}`,
+    UPDATE_COLLEGE_LEAD: (id) => `${API_URL}/api/admin/college/${id}/lead`,
+    UPDATE_FACULTY_LEAD: (id) => `${API_URL}/api/admin/user/${id}/lead`,
 };

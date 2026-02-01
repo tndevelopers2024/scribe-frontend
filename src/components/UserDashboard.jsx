@@ -24,8 +24,10 @@ import {
     FaStethoscope,
     FaHandsHelping,
     FaPalette,
-    FaFileDownload
+    FaFileDownload,
+    FaDownload
 } from 'react-icons/fa';
+import { toast } from 'react-hot-toast';
 import ProfileDetails from './portfolio/ProfileDetails';
 import AcademicAchievements from './portfolio/AcademicAchievements';
 import CourseReflection from './portfolio/CourseReflection';
@@ -49,6 +51,7 @@ const UserDashboard = () => {
     const [faculties, setFaculties] = useState([]);
     const [loadingFaculties, setLoadingFaculties] = useState(false);
     const [error, setError] = useState('');
+    const [isDownloading, setIsDownloading] = useState(false);
 
     // Determine active section from URL path
     // Remove '/dashboard/' prefix and split to find the current section
@@ -88,13 +91,26 @@ const UserDashboard = () => {
     };
 
     const handleDownloadPDF = async () => {
-        if (!fullProfileData) {
-            await fetchStudentProfile();
-        }
-        if (fullProfileData) {
-            import('../utils/pdfGenerator').then(module => {
-                module.generatePortfolioPDF(fullProfileData);
-            });
+        try {
+            setIsDownloading(true);
+            const toastId = toast.loading('Generating your portfolio PDF...');
+
+            if (!fullProfileData) {
+                await fetchStudentProfile();
+            }
+
+            if (fullProfileData) {
+                const { generatePortfolioPDF } = await import('../utils/pdfGenerator');
+                await generatePortfolioPDF(fullProfileData);
+                toast.success('Portfolio PDF downloaded successfully!', { id: toastId });
+            } else {
+                toast.error('Could not fetch profile data for PDF generation.', { id: toastId });
+            }
+        } catch (error) {
+            console.error('PDF Generation Error:', error);
+            toast.error('Failed to generate PDF. Please try again.');
+        } finally {
+            setIsDownloading(false);
         }
     };
 
@@ -229,9 +245,9 @@ const UserDashboard = () => {
 
     // Student E-Portfolio View
     return (
-        <div className="flex gap-6 max-w-8xl mx-auto">
+        <div className="flex flex-col md:flex-row gap-6 max-w-8xl mx-auto items-start">
             {/* Sidebar */}
-            <div className="w-82 bg-white rounded-2xl shadow-xl border border-gray-100 p-6 h-fit sticky top-6">
+            <div className="w-full md:w-82 bg-white rounded-2xl shadow-xl border border-gray-100 p-6 h-fit sticky top-24">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-lg font-bold text-gray-800">E-Portfolio</h3>
                     <div className="bg-brand-purple/10 px-3 py-1 rounded-full flex items-center gap-2">
@@ -240,14 +256,23 @@ const UserDashboard = () => {
                     </div>
                 </div>
 
-                <button
-                    onClick={handleDownloadPDF}
-                    className="w-full mb-4 flex items-center justify-center gap-2 bg-gray-800 text-white px-4 py-2.5 rounded-xl hover:bg-gray-900 transition text-sm font-medium"
-                >
-                    <FaFileDownload /> Download Portfolio PDF
-                </button>
+                {/* Profile Header in Sidebar for Student */}
+                <div className="flex items-center gap-3 mb-6 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <div className="bg-brand-purple/10 p-2 rounded-full text-brand-purple">
+                        <FaGraduationCap />
+                    </div>
+                    <div className="min-w-0">
+                        <h4 className="font-bold text-gray-800 text-sm truncate">{user.name}</h4>
+                        <p className="text-[10px] text-gray-500 truncate">{user.email}</p>
+                        {fullProfileData?.faculty && (
+                            <p className="text-[10px] text-brand-purple font-medium mt-0.5 truncate">
+                                Faculty: {fullProfileData.faculty.name}
+                            </p>
+                        )}
+                    </div>
+                </div>
 
-                <nav className="space-y-1">
+                <nav className="space-y-1 mb-6">
                     {sidebarSections.map((section) => (
                         <div key={section.id}>
                             {section.expandable ? (
@@ -302,6 +327,40 @@ const UserDashboard = () => {
                         </div>
                     ))}
                 </nav>
+
+                <div className="pt-4 border-t border-gray-100 space-y-4">
+                    <button
+                        onClick={handleDownloadPDF}
+                        disabled={isDownloading}
+                        className="w-full flex items-center justify-center gap-2 bg-gray-800 text-white px-4 py-2.5 rounded-xl hover:bg-gray-900 transition text-sm font-medium disabled:opacity-75 disabled:cursor-not-allowed"
+                    >
+                        {isDownloading ? (
+                            <>
+                                <FaSpinner className="animate-spin" />
+                                Downloading...
+                            </>
+                        ) : (
+                            <>
+                                <FaDownload /> Download Portfolio PDF
+                            </>
+                        )}
+                    </button>
+
+                    {/* Kudos Box */}
+                    <div className="bg-[#f0f9ff] border border-[#bae6fd] rounded-2xl p-4 text-center shadow-sm">
+                        <h3 className="text-lg font-bold text-[#8b4ca1] mb-1">Kudos</h3>
+                        <h4 className="text-sm font-bold text-gray-800 mb-2">{fullProfileData?.name || user?.name || 'Student'}</h4>
+
+                        <div className="space-y-1">
+                            <p className="text-[10px] text-gray-600">
+                                1 Achievement = <span className="text-[#8b4ca1] font-bold">1 pts</span>
+                            </p>
+                            <p className="text-sm font-bold text-gray-800 pt-1 border-t border-[#bae6fd]/50">
+                                Total Points : <span className="text-[#8b4ca1]">{currentPoints || 0}</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* Main Content */}

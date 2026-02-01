@@ -2,15 +2,19 @@ import { useState, useEffect, useContext } from 'react';
 import AuthContext from '../../context/AuthContext';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaSpinner, FaCheck, FaBan, FaInfoCircle, FaClock } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaSpinner, FaCheck, FaBan, FaInfoCircle, FaClock, FaFlask } from 'react-icons/fa';
 import { API_ENDPOINTS } from '../../config/constants';
+import DeleteConfirmationModal from './DeleteConfirmationModal';
 
-const ResearchPublications = ({ isFaculty, studentId, studentData }) => {
+const ResearchPublications = ({ isFaculty, studentId, studentData, updatePendingCount }) => {
     const { user } = useContext(AuthContext);
     const [publications, setPublications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
+    const [expandedRows, setExpandedRows] = useState({});
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
 
     // Review State
     const [reviewModalOpen, setReviewModalOpen] = useState(false);
@@ -91,13 +95,20 @@ const ResearchPublications = ({ isFaculty, studentId, studentData }) => {
         setShowForm(true);
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this publication?')) return;
+    const handleDelete = (publication) => {
+        setItemToDelete(publication);
+        setDeleteModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!itemToDelete) return;
 
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            await axios.delete(`${API_ENDPOINTS.RESEARCH_PUBLICATIONS}/${id}`, config);
+            await axios.delete(`${API_ENDPOINTS.RESEARCH_PUBLICATIONS}/${itemToDelete._id}`, config);
             toast.success('Publication deleted successfully');
+            setDeleteModalOpen(false);
+            setItemToDelete(null);
             fetchPublications();
         } catch (error) {
             toast.error(error.response?.data?.message || 'Error deleting publication');
@@ -137,6 +148,9 @@ const ResearchPublications = ({ isFaculty, studentId, studentData }) => {
             setPublications(updated);
 
             toast.success(`Publication ${status === 'Approved' ? 'Approved' : 'Rejected'} Successfully`);
+            if (updatePendingCount) {
+                updatePendingCount('research');
+            }
             setReviewModalOpen(false);
             setSelectedItemForReview(null);
         } catch (error) {
@@ -145,10 +159,28 @@ const ResearchPublications = ({ isFaculty, studentId, studentData }) => {
         }
     };
 
-    const getStatusBadge = (status) => {
+    const toggleRowExpansion = (id) => {
+        setExpandedRows(prev => ({
+            ...prev,
+            [id]: !prev[id]
+        }));
+    };
+
+    const getStatusBadge = (item) => {
+        const { status, reviewedBy } = item;
+        let reviewerName = '';
+        if (reviewedBy) {
+            if (reviewedBy.profile && (reviewedBy.profile.firstName || reviewedBy.profile.lastName)) {
+                reviewerName = `${reviewedBy.profile.firstName} ${reviewedBy.profile.lastName}`.trim();
+            } else if (reviewedBy.name) {
+                reviewerName = reviewedBy.name;
+            }
+        }
+
         switch (status) {
-            case 'Approved': return <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold flex items-center gap-1"><FaCheck /> Approved</span>;
-            case 'Rejected': return <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold flex items-center gap-1"><FaBan /> Rejected</span>;
+            case 'Approved': return <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold flex items-center gap-1"><FaCheck /> Approved {reviewerName && `by ${reviewerName}`}</span>;
+            case 'Rejected': return <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold flex items-center gap-1"><FaBan /> Rejected {reviewerName && `by ${reviewerName}`}</span>;
+            case 'Resubmitted': return <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold flex items-center gap-1"><FaClock /> Resubmitted</span>;
             default: return <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold flex items-center gap-1"><FaClock /> Pending</span>;
         }
     };
@@ -230,7 +262,6 @@ const ResearchPublications = ({ isFaculty, studentId, studentData }) => {
                                     value={formData.typeOfArticle}
                                     onChange={handleChange}
                                     required
-                                    placeholder="e.g., Journal Article, Conference Paper"
                                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none"
                                 />
                             </div>
@@ -246,7 +277,6 @@ const ResearchPublications = ({ isFaculty, studentId, studentData }) => {
                                     value={formData.authors}
                                     onChange={handleChange}
                                     required
-                                    placeholder="e.g., John Doe, Jane Smith"
                                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none"
                                 />
                             </div>
@@ -276,7 +306,6 @@ const ResearchPublications = ({ isFaculty, studentId, studentData }) => {
                                     name="doi"
                                     value={formData.doi}
                                     onChange={handleChange}
-                                    placeholder="e.g., 10.1000/xyz123"
                                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none"
                                 />
                             </div>
@@ -305,7 +334,6 @@ const ResearchPublications = ({ isFaculty, studentId, studentData }) => {
                                     name="impactFactor"
                                     value={formData.impactFactor}
                                     onChange={handleChange}
-                                    placeholder="e.g., 3.5"
                                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none"
                                 />
                             </div>
@@ -338,114 +366,149 @@ const ResearchPublications = ({ isFaculty, studentId, studentData }) => {
                     {!isFaculty && <p className="text-gray-400 text-sm mt-2">Click "Add Publication" to get started</p>}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 gap-4">
-                    {publications.map((publication) => (
-                        <div
-                            key={publication._id}
-                            className={`bg-white p-6 rounded-2xl shadow-xl border relative ${publication.status === 'Rejected' ? 'border-red-200 bg-red-50' :
-                                publication.status === 'Approved' ? 'border-green-200' : 'border-gray-100'
-                                }`}
-                        >
-                            {/* Verification Status Badge */}
-                            <div className="absolute top-4 right-4">
-                                {getStatusBadge(publication.status)}
-                            </div>
-
-                            <div className="flex justify-between items-start mb-4 mt-4">
-                                <div className="flex-1 pr-24">
-                                    <h3 className="text-xl font-bold text-gray-800">{publication.projectTitle}</h3>
-                                    <p className="text-sm text-gray-500 mt-1">
-                                        {publication.typeOfArticle} • {publication.journal}
-                                    </p>
-                                </div>
-                                <div className="flex gap-2">
-                                    {!isFaculty && (
-                                        <>
-                                            <button
-                                                onClick={() => handleEdit(publication)}
-                                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                                            >
-                                                <FaEdit />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(publication._id)}
-                                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                                            >
-                                                <FaTrash />
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="space-y-2 text-sm">
-                                <div>
-                                    <span className="font-medium text-gray-700">Authors:</span>
-                                    <p className="text-gray-600">{publication.authors}</p>
-                                </div>
-                                {publication.doi && (
-                                    <div>
-                                        <span className="font-medium text-gray-700">DOI:</span>
-                                        <p className="text-gray-600">{publication.doi}</p>
-                                    </div>
-                                )}
-                                {publication.citation && (
-                                    <div>
-                                        <span className="font-medium text-gray-700">Citation:</span>
-                                        <p className="text-gray-600">{publication.citation}</p>
-                                    </div>
-                                )}
-                                {publication.impactFactor && (
-                                    <div>
-                                        <span className="font-medium text-gray-700">Impact Factor:</span>
-                                        <p className="text-gray-600">{publication.impactFactor}</p>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Feedback Display */}
-                            {publication.feedback && (
-                                <div className={`mt-4 p-3 rounded-lg text-sm border ${publication.status === 'Approved'
-                                    ? 'bg-green-50 border-green-100 text-green-800'
-                                    : 'bg-yellow-50 border-yellow-100 text-yellow-900'
-                                    }`}>
-                                    <strong className="block mb-1 flex items-center gap-1">
-                                        <FaInfoCircle /> Feedback:
-                                    </strong>
-                                    <p className="italic">"{publication.feedback}"</p>
-                                </div>
-                            )}
-
-                            {/* Faculty Actions */}
-                            {isFaculty && (
-                                <div className="mt-4 pt-4 border-t border-gray-200 flex gap-2">
-                                    <button
-                                        onClick={() => openReviewModal(publication, 'Approved')}
-                                        className="flex-1 bg-green-50 text-green-600 hover:bg-green-100 px-4 py-2 rounded-lg transition text-sm font-medium flex justify-center items-center gap-2"
-                                        disabled={publication.status === 'Approved'}
-                                    >
-                                        <FaCheck /> Approve
-                                    </button>
-                                    <button
-                                        onClick={() => openReviewModal(publication, 'Rejected')}
-                                        className="flex-1 bg-red-50 text-red-600 hover:bg-red-100 px-4 py-2 rounded-lg transition text-sm font-medium flex justify-center items-center gap-2"
-                                    >
-                                        <FaBan /> Reject
-                                    </button>
-                                </div>
-                            )}
+                <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+                    {/* Table Header */}
+                    <div className="bg-gradient-to-r from-brand-purple to-purple-600 text-white">
+                        <div className="grid grid-cols-12 gap-4 px-6 py-4 font-semibold text-sm">
+                            <div className="col-span-5">Project Title</div>
+                            <div className="col-span-2 text-center">Details</div>
+                            <div className="col-span-3 text-center">Status</div>
+                            <div className="col-span-2 text-right">Actions</div>
                         </div>
-                    ))}
+                    </div>
+
+                    {/* Table Body */}
+                    <div className="divide-y divide-gray-100">
+                        {publications.map((publication) => (
+                            <div key={publication._id}>
+                                <div
+                                    className={`grid grid-cols-12 gap-4 px-6 py-5 hover:bg-gray-50 transition-colors ${publication.status === 'Rejected' ? 'bg-red-50/30' :
+                                        publication.status === 'Approved' ? 'bg-green-50/30' : ''
+                                        }`}
+                                >
+                                    {/* Project Title */}
+                                    <div className="col-span-5 flex items-start gap-2">
+                                        <FaFlask className="text-brand-purple mt-1 flex-shrink-0" />
+                                        <p className="text-sm font-medium text-gray-800 line-clamp-2">{publication.projectTitle}</p>
+                                    </div>
+
+                                    {/* View Details Toggle */}
+                                    <div className="col-span-2 flex items-center justify-center">
+                                        <button
+                                            onClick={() => toggleRowExpansion(publication._id)}
+                                            className="text-brand-purple hover:underline text-sm font-medium"
+                                        >
+                                            {expandedRows[publication._id] ? 'Hide' : 'View'} Details
+                                        </button>
+                                    </div>
+
+                                    {/* Status */}
+                                    <div className="col-span-3 flex items-center justify-center">
+                                        {getStatusBadge(publication)}
+                                    </div>
+
+                                    {/* Actions */}
+                                    <div className="col-span-2 flex items-center justify-end gap-2 text-right">
+                                        {!isFaculty ? (
+                                            <>
+                                                {publication.status !== 'Approved' && (
+                                                    <button
+                                                        onClick={() => handleEdit(publication)}
+                                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                                                        title="Edit"
+                                                    >
+                                                        <FaEdit />
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => handleDelete(publication)}
+                                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                                                    title="Delete"
+                                                >
+                                                    <FaTrash />
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => openReviewModal(publication, 'Approved')}
+                                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition text-xs font-bold ${publication.status === 'Approved'
+                                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
+                                                        : 'bg-green-50 text-green-600 hover:bg-green-100'
+                                                        }`}
+                                                    disabled={publication.status === 'Approved'}
+                                                >
+                                                    <FaCheck /> Approve
+                                                </button>
+                                                <button
+                                                    onClick={() => openReviewModal(publication, 'Rejected')}
+                                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition text-xs font-bold ${publication.status === 'Rejected'
+                                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
+                                                        : 'bg-red-50 text-red-600 hover:bg-red-100'
+                                                        }`}
+                                                    disabled={publication.status === 'Rejected'}
+                                                >
+                                                    <FaBan /> Reject
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+
+                                {/* Expandable Details Section */}
+                                {expandedRows[publication._id] && (
+                                    <div className="px-6 pb-6 pt-2 bg-gray-50/50 animate-fade-in">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
+                                            <div>
+                                                <p className="text-xs font-bold text-gray-400 uppercase mb-1">Journal/Series</p>
+                                                <p className="text-sm text-gray-700 font-medium">{publication.journal}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-gray-400 uppercase mb-1">Authors</p>
+                                                <p className="text-sm text-gray-700 font-medium">{publication.authors}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-gray-400 uppercase mb-1">Impact Factor</p>
+                                                <p className="text-sm text-gray-700 font-medium">{publication.impactFactor || 'N/A'}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-gray-400 uppercase mb-1">DOI</p>
+                                                <p className="text-sm text-gray-700 font-medium">{publication.doi || 'Not specified'}</p>
+                                            </div>
+                                            <div className="col-span-2">
+                                                <p className="text-xs font-bold text-gray-400 uppercase mb-1">Citation</p>
+                                                <p className="text-sm text-gray-700 font-medium break-words">{publication.citation || 'Not specified'}</p>
+                                            </div>
+
+                                            {/* Feedback Display */}
+                                            {publication.feedback && (
+                                                <div className="col-span-full mt-2 pt-2 border-t border-gray-100">
+                                                    <p className="text-xs font-bold text-gray-400 uppercase mb-2 flex items-center gap-1">
+                                                        <FaInfoCircle /> Faculty Feedback
+                                                    </p>
+                                                    <div className={`p-3 rounded-lg text-sm ${publication.status === 'Approved'
+                                                        ? 'bg-green-50 text-green-800 border border-green-100'
+                                                        : 'bg-yellow-50 text-yellow-800 border border-yellow-100'
+                                                        }`}>
+                                                        <p className="italic text-sm">"{publication.feedback}"</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 
-            {/* Verification Modal for Faculty */}
             {reviewModalOpen && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
                     <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-fade-in">
-                        <div className={`p-6 border-b border-gray-100 flex justify-between items-center ${reviewAction === 'Approved' ? 'bg-green-50' : 'bg-red-50'
-                            }`}>
-                            <h3 className={`font-bold text-lg ${reviewAction === 'Approved' ? 'text-green-800' : 'text-red-800'
-                                }`}>
+                        <div className={`p-6 border-b border-gray-100 flex justify-between items-center ${reviewAction === 'Approved' ? 'bg-green-50' : 'bg-red-50'}`}>
+                            <h3 className={`font-bold text-lg ${reviewAction === 'Approved' ? 'text-green-800' : 'text-red-800'}`}>
                                 {reviewAction === 'Approved' ? 'Approve & Feedback' : 'Reject & Feedback'}
                             </h3>
                         </div>
@@ -459,7 +522,6 @@ const ResearchPublications = ({ isFaculty, studentId, studentData }) => {
                                 value={reviewFeedback}
                                 onChange={(e) => setReviewFeedback(e.target.value)}
                                 rows="4"
-                                placeholder={`Enter your feedback here...`}
                                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none"
                             ></textarea>
                             <div className="flex gap-3 pt-2">
@@ -484,6 +546,14 @@ const ResearchPublications = ({ isFaculty, studentId, studentData }) => {
                     </div>
                 </div>
             )}
+
+            <DeleteConfirmationModal
+                isOpen={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                onConfirm={confirmDelete}
+                itemName={itemToDelete?.title}
+                isApproved={itemToDelete?.status === 'Approved'}
+            />
         </div>
     );
 };

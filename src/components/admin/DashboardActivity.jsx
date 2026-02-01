@@ -1,11 +1,59 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { FaChartBar, FaCheckCircle, FaClipboardList, FaUsers } from 'react-icons/fa';
+import { FaChartBar, FaCheckCircle, FaClipboardList, FaUsers, FaUniversity, FaTimesCircle, FaChalkboardTeacher } from 'react-icons/fa';
 
-const DashboardActivity = ({ users = [] }) => {
-    const students = users.filter(u => u.role === 'Student');
+const DashboardActivity = ({ users = [], colleges = [] }) => {
+    const [selectedCollege, setSelectedCollege] = useState('all');
+    const [selectedFaculty, setSelectedFaculty] = useState('all');
 
-    // 1. Define Sections and Init Stats
+    // 1. Get filtered list of faculties based on selected college
+    const availableFaculties = users.filter(u => {
+        if (u.role !== 'Faculty') return false;
+        if (selectedCollege === 'all') return true;
+
+        // Find if this faculty belongs to the college
+        // We check u.leadFaculty?.college (if populated), u.college?._id (if populated), or u.college (if ID)
+        // Usually Faculty -> Lead Faculty -> College
+
+        // Check direct college
+        if ((u.college?._id || u.college) === selectedCollege) return true;
+
+        // Check lead faculty's college if available
+        if (u.leadFaculty && (u.leadFaculty.college === selectedCollege || u.leadFaculty.college?._id === selectedCollege)) return true;
+
+        return false;
+    });
+
+    // 2. Filter Students 
+    const students = users.filter(u => {
+        if (u.role !== 'Student') return false;
+
+        // College Filter
+        if (selectedCollege !== 'all') {
+            const studentCollegeId = u.college?._id || u.college;
+            if (studentCollegeId !== selectedCollege) return false;
+        }
+
+        // Faculty Filter
+        if (selectedFaculty !== 'all') {
+            // Check if student is assigned to this faculty
+            // Fields: u.faculty (id or object) or u.assignedBy (id or object)
+            const studentFacultyId = u.faculty?._id || u.faculty;
+            const assignedById = u.assignedBy?._id || u.assignedBy;
+
+            if (studentFacultyId !== selectedFaculty && assignedById !== selectedFaculty) return false;
+        }
+
+        return true;
+    });
+
+    // Reset faculty when college changes
+    const handleCollegeChange = (e) => {
+        setSelectedCollege(e.target.value);
+        setSelectedFaculty('all');
+    };
+
+    // 3. Define Sections and Init Stats
     const sectionsConfig = [
         { key: 'academicAchievements', label: 'Academic' },
         { key: 'courseReflections', label: 'Reflections' },
@@ -23,26 +71,30 @@ const DashboardActivity = ({ users = [] }) => {
 
     // Initialize map
     const sectionStats = sectionsConfig.reduce((acc, curr) => {
-        acc[curr.key] = { name: curr.label, Submissions: 0, Approved: 0 };
+        acc[curr.key] = { name: curr.label, Submissions: 0, Approved: 0, Rejected: 0 };
         return acc;
     }, {});
 
     let grandTotalSubmissions = 0;
     let grandTotalApproved = 0;
+    let grandTotalRejected = 0;
 
-    // 2. Iterate and Aggregate
+    // 4. Iterate and Aggregate
     students.forEach(student => {
         sectionsConfig.forEach(sec => {
             const items = student[sec.key];
             if (items && Array.isArray(items)) {
                 const count = items.length;
                 const approvedCount = items.filter(i => i.status === 'Approved').length;
+                const rejectedCount = items.filter(i => i.status === 'Rejected').length;
 
                 sectionStats[sec.key].Submissions += count;
                 sectionStats[sec.key].Approved += approvedCount;
+                sectionStats[sec.key].Rejected += rejectedCount;
 
                 grandTotalSubmissions += count;
                 grandTotalApproved += approvedCount;
+                grandTotalRejected += rejectedCount;
             }
         });
     });
@@ -52,13 +104,54 @@ const DashboardActivity = ({ users = [] }) => {
 
     const pieData = [
         { name: 'Approved', value: grandTotalApproved },
-        { name: 'Pending/Rejected', value: grandTotalSubmissions - grandTotalApproved }
+        { name: 'Rejected', value: grandTotalRejected },
+        { name: 'Pending', value: grandTotalSubmissions - (grandTotalApproved + grandTotalRejected) }
     ];
 
-    const COLORS = ['#10B981', '#F59E0B']; // Green, Amber
+    const COLORS = ['#10B981', '#EF4444', '#F59E0B']; // Green, Red, Amber
 
     return (
         <div className="space-y-8 animate-fade-in">
+            {/* Filter Section */}
+            <div className="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-gray-100 gap-4">
+                <div className="flex items-center gap-2 text-gray-700 font-semibold">
+                    <FaUniversity className="text-brand-purple" />
+                    <span>Filter Statistics:</span>
+                </div>
+                <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                    {/* College Dropdown */}
+                    <div className="relative w-full md:w-72 lg:w-96">
+                        <select
+                            value={selectedCollege}
+                            onChange={handleCollegeChange}
+                            className="w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-xl focus:ring-brand-purple focus:border-brand-purple block py-2.5 pl-4 pr-10 outline-none transition-all hover:bg-white hover:shadow-md appearance-none truncate"
+                        >
+                            <option value="all">All Colleges</option>
+                            {colleges.map(college => (
+                                <option key={college._id} value={college._id}>{college.name}</option>
+                            ))}
+                        </select>
+                        <FaUniversity className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    </div>
+
+                    {/* Faculty Dropdown */}
+                    <div className="relative w-full md:w-60">
+                        <select
+                            value={selectedFaculty}
+                            onChange={(e) => setSelectedFaculty(e.target.value)}
+                            disabled={selectedCollege === 'all'}
+                            className="w-full bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-xl focus:ring-brand-purple focus:border-brand-purple block py-2.5 pl-4 pr-10 outline-none transition-all hover:bg-white hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed appearance-none truncate"
+                        >
+                            <option value="all">All Faculties</option>
+                            {availableFaculties.map(faculty => (
+                                <option key={faculty._id} value={faculty._id}>{faculty.name}</option>
+                            ))}
+                        </select>
+                        <FaChalkboardTeacher className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    </div>
+                </div>
+            </div>
+
             {/* Stat Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
@@ -83,11 +176,11 @@ const DashboardActivity = ({ users = [] }) => {
                     </div>
                 </div>
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
-                    <div className="bg-orange-100 p-3 rounded-xl text-orange-600"><FaChartBar /></div>
+                    <div className="bg-red-100 p-3 rounded-xl text-red-600"><FaTimesCircle /></div>
                     <div>
-                        <p className="text-sm text-gray-500">Approval Rate</p>
+                        <p className="text-sm text-gray-500">Rejected</p>
                         <h4 className="text-2xl font-bold text-gray-800">
-                            {grandTotalSubmissions > 0 ? Math.round((grandTotalApproved / grandTotalSubmissions) * 100) : 0}%
+                            {grandTotalRejected}
                         </h4>
                     </div>
                 </div>
@@ -96,7 +189,7 @@ const DashboardActivity = ({ users = [] }) => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Bar Chart */}
                 <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
-                    <h3 className="text-lg font-bold text-gray-800 mb-6">Overall Submissions by Category</h3>
+                    <h3 className="text-lg font-bold text-gray-800 mb-6">Submissions Overview {selectedCollege !== 'all' ? '(Filtered)' : ''}</h3>
                     <div className="h-80 w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
@@ -110,6 +203,7 @@ const DashboardActivity = ({ users = [] }) => {
                                 <Legend />
                                 <Bar dataKey="Submissions" fill="#8B5CF6" radius={[4, 4, 0, 0]} barSize={20} name="Total" />
                                 <Bar dataKey="Approved" fill="#10B981" radius={[4, 4, 0, 0]} barSize={20} name="Approved" />
+                                <Bar dataKey="Rejected" fill="#EF4444" radius={[4, 4, 0, 0]} barSize={20} name="Rejected" />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -117,7 +211,7 @@ const DashboardActivity = ({ users = [] }) => {
 
                 {/* Pie Chart */}
                 <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
-                    <h3 className="text-lg font-bold text-gray-800 mb-6">Overall Status</h3>
+                    <h3 className="text-lg font-bold text-gray-800 mb-6">Overall Status Breakdown</h3>
                     <div className="h-80 w-full flex justify-center items-center">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>

@@ -2,8 +2,60 @@ import { useState, useEffect, useContext } from 'react';
 import AuthContext from '../../context/AuthContext';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { FaSave, FaTimes, FaEdit, FaSpinner } from 'react-icons/fa';
+import { FaSave, FaTimes, FaEdit, FaSpinner, FaUser } from 'react-icons/fa';
 import { API_ENDPOINTS, API_URL } from '../../config/constants';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
+
+// Custom Styles for DatePicker
+const datePickerStyles = `
+    .react-datepicker-wrapper { width: 100%; }
+    .react-datepicker__input-container input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid #e5e7eb; /* gray-200 */
+        border-radius: 0.75rem; /* rounded-xl */
+        outline: none;
+        transition: all 150ms ease-in-out;
+    }
+    .react-datepicker__input-container input:focus {
+        border-color: rgba(139, 92, 246, 0.5); /* brand-purple/50 */
+        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.5);
+    }
+    .react-datepicker {
+        font-family: inherit;
+        border: 1px solid #e5e7eb;
+        border-radius: 1rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    .react-datepicker__header {
+        background-color: #f3f4f6; /* gray-100 */
+        border-bottom: 1px solid #e5e7eb;
+        border-top-left-radius: 1rem;
+        border-top-right-radius: 1rem;
+        padding-top: 1rem;
+    }
+    .react-datepicker__current-month {
+        color: #4b5563; /* gray-700 */
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    .react-datepicker__day-name {
+        color: #9ca3af; /* gray-400 */
+    }
+    .react-datepicker__day--selected, .react-datepicker__day--keyboard-selected {
+        background-color: #8b5cf6 !important; /* brand-purple */
+        color: white !important;
+        border-radius: 0.5rem;
+    }
+    .react-datepicker__day:hover {
+        background-color: #f3e8ff; /* purple-100 */
+        border-radius: 0.5rem;
+    }
+    .react-datepicker__navigation-icon::before {
+        border-color: #6b7280; /* gray-500 */
+    }
+`;
 
 const ProfileDetails = ({ isFaculty, studentId, studentData }) => {
     const { user } = useContext(AuthContext);
@@ -27,37 +79,28 @@ const ProfileDetails = ({ isFaculty, studentId, studentData }) => {
         profilePicture: ''
     });
 
-    const [colleges, setColleges] = useState([]);
-
-    useEffect(() => {
-        if (!isFaculty) {
-            fetchColleges();
-        }
-    }, [isFaculty]);
-
-    const fetchColleges = async () => {
-        try {
-            const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            const res = await axios.get(API_ENDPOINTS.COLLEGES, config);
-            setColleges(res.data);
-        } catch (error) {
-            console.error('Error fetching colleges:', error);
-        }
-    };
+    // No longer fetching colleges as we're using registration data
 
     useEffect(() => {
         if (isFaculty && studentData) {
+            // Auto-fill fallback logic for Faculty viewing Student
+            const nameParts = studentData.name ? studentData.name.split(' ') : [];
+            const firstName = studentData.profile?.firstName || nameParts[0] || '';
+            const lastName = studentData.profile?.lastName || (nameParts.length > 1 ? nameParts[nameParts.length - 1] : '');
+            const middleName = studentData.profile?.middleName || (nameParts.length > 2 ? nameParts.slice(1, -1).join(' ') : '');
+            const institution = studentData.profile?.institution || studentData.college?.name || '';
+
             setProfileData({
-                firstName: studentData.profile?.firstName || '',
-                middleName: studentData.profile?.middleName || '',
-                lastName: studentData.profile?.lastName || '',
+                firstName,
+                middleName,
+                lastName,
                 dateOfBirth: studentData.profile?.dateOfBirth ? new Date(studentData.profile?.dateOfBirth).toISOString().split('T')[0] : '',
                 sex: studentData.profile?.sex || '',
                 phoneNumber: studentData.profile?.phoneNumber || '',
                 fieldOfStudy: studentData.profile?.fieldOfStudy || '',
                 levelOfEducation: studentData.profile?.levelOfEducation || '',
                 yearOfStudy: studentData.profile?.yearOfStudy || '',
-                institution: studentData.profile?.institution || '',
+                institution,
                 country: studentData.profile?.country || '',
                 about: studentData.profile?.about || '',
                 vision: studentData.profile?.vision || '',
@@ -75,22 +118,29 @@ const ProfileDetails = ({ isFaculty, studentId, studentData }) => {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
             const res = await axios.get(API_ENDPOINTS.PROFILE, config);
 
-            if (res.data.profile) {
+            if (res.data) {
+                // Auto-fill fallback logic for current student
+                const nameParts = res.data.name ? res.data.name.split(' ') : [];
+                const firstName = res.data.profile?.firstName || nameParts[0] || '';
+                const lastName = res.data.profile?.lastName || (nameParts.length > 1 ? nameParts[nameParts.length - 1] : '');
+                const middleName = res.data.profile?.middleName || (nameParts.length > 2 ? nameParts.slice(1, -1).join(' ') : '');
+                const institution = res.data.profile?.institution || res.data.college?.name || '';
+
                 setProfileData({
-                    firstName: res.data.profile.firstName || '',
-                    middleName: res.data.profile.middleName || '',
-                    lastName: res.data.profile.lastName || '',
-                    dateOfBirth: res.data.profile.dateOfBirth ? new Date(res.data.profile.dateOfBirth).toISOString().split('T')[0] : '',
-                    sex: res.data.profile.sex || '',
-                    phoneNumber: res.data.profile.phoneNumber || '',
-                    fieldOfStudy: res.data.profile.fieldOfStudy || '',
-                    levelOfEducation: res.data.profile.levelOfEducation || '',
-                    yearOfStudy: res.data.profile.yearOfStudy || '',
-                    institution: res.data.profile.institution || '',
-                    country: res.data.profile.country || '',
-                    about: res.data.profile.about || '',
-                    vision: res.data.profile.vision || '',
-                    profilePicture: res.data.profile.profilePicture || ''
+                    firstName,
+                    middleName,
+                    lastName,
+                    dateOfBirth: res.data.profile?.dateOfBirth ? new Date(res.data.profile.dateOfBirth).toISOString().split('T')[0] : '',
+                    sex: res.data.profile?.sex || '',
+                    phoneNumber: res.data.profile?.phoneNumber || '',
+                    fieldOfStudy: res.data.profile?.fieldOfStudy || '',
+                    levelOfEducation: res.data.profile?.levelOfEducation || '',
+                    yearOfStudy: res.data.profile?.yearOfStudy || '',
+                    institution,
+                    country: res.data.profile?.country || '',
+                    about: res.data.profile?.about || '',
+                    vision: res.data.profile?.vision || '',
+                    profilePicture: res.data.profile?.profilePicture || ''
                 });
             }
         } catch (error) {
@@ -196,7 +246,7 @@ const ProfileDetails = ({ isFaculty, studentId, studentData }) => {
                             />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center text-gray-400 text-4xl">
-                                <span>📷</span>
+                                <FaUser />
                             </div>
                         )}
                     </div>
@@ -265,24 +315,29 @@ const ProfileDetails = ({ isFaculty, studentId, studentData }) => {
 
                     {/* Date of Birth */}
                     <div>
+                        <style>{datePickerStyles}</style>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Date of Birth <span className="text-red-500">*</span>
                         </label>
-                        <input
-                            type="date"
-                            name="dateOfBirth"
-                            value={profileData.dateOfBirth}
-                            onChange={handleChange}
+                        <DatePicker
+                            selected={profileData.dateOfBirth ? new Date(profileData.dateOfBirth) : null}
+                            onChange={(date) => setProfileData({ ...profileData, dateOfBirth: date ? date.toISOString().split('T')[0] : '' })}
+                            dateFormat="dd/MM/yyyy"
+                            placeholderText="DD/MM/YYYY"
                             disabled={!isEditing}
-                            required
                             className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none disabled:bg-gray-50 disabled:text-gray-600"
+                            wrapperClassName="w-full"
+                            showYearDropdown
+                            scrollableYearDropdown
+                            yearDropdownItemNumber={100}
+                            required
                         />
                     </div>
 
                     {/* Sex */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Sex <span className="text-red-500">*</span>
+                            Gender <span className="text-red-500">*</span>
                         </label>
                         <select
                             name="sex"
@@ -292,7 +347,7 @@ const ProfileDetails = ({ isFaculty, studentId, studentData }) => {
                             required
                             className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none disabled:bg-gray-50 disabled:text-gray-600"
                         >
-                            <option value="">Select Sex</option>
+                            <option value="">Select Gender</option>
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
                             <option value="Other">Other</option>
@@ -368,7 +423,6 @@ const ProfileDetails = ({ isFaculty, studentId, studentData }) => {
                             onChange={handleChange}
                             disabled={!isEditing}
                             required
-                            placeholder="e.g., 1st Year, 2nd Year"
                             className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none disabled:bg-gray-50 disabled:text-gray-600"
                         />
                     </div>
@@ -378,21 +432,16 @@ const ProfileDetails = ({ isFaculty, studentId, studentData }) => {
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Institution <span className="text-red-500">*</span>
                         </label>
-                        <select
+                        <input
+                            type="text"
                             name="institution"
                             value={profileData.institution}
                             onChange={handleChange}
                             disabled={!isEditing}
                             required
+                            placeholder="Enter your institution"
                             className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none disabled:bg-gray-50 disabled:text-gray-600"
-                        >
-                            <option value="">Select Institution</option>
-                            {colleges.map((college) => (
-                                <option key={college._id} value={college.name}>
-                                    {college.name}
-                                </option>
-                            ))}
-                        </select>
+                        />
                     </div>
 
                     {/* Country */}
@@ -425,7 +474,6 @@ const ProfileDetails = ({ isFaculty, studentId, studentData }) => {
                             onChange={handleChange}
                             disabled={!isEditing}
                             rows="4"
-                            placeholder="Share a brief introduction about yourself..."
                             className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none disabled:bg-gray-50 disabled:text-gray-600"
                         />
                     </div>
@@ -441,7 +489,6 @@ const ProfileDetails = ({ isFaculty, studentId, studentData }) => {
                             onChange={handleChange}
                             disabled={!isEditing}
                             rows="4"
-                            placeholder="What are your future goals and vision?"
                             className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none disabled:bg-gray-50 disabled:text-gray-600"
                         />
                     </div>

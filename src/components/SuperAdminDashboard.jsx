@@ -3,7 +3,7 @@ import axios from 'axios';
 import AuthContext from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
 import { API_ENDPOINTS } from '../config/constants';
-import { FaChartPie, FaUniversity, FaChalkboardTeacher, FaUserTie, FaUserGraduate, FaArrowRight, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
+import { FaChartPie, FaUniversity, FaChalkboardTeacher, FaUserTie, FaUserGraduate, FaArrowRight, FaCheckCircle, FaExclamationCircle, FaSpinner } from 'react-icons/fa';
 
 import DashboardActivity from './admin/DashboardActivity';
 import CollegeHierarchy from './admin/CollegeHierarchy';
@@ -23,6 +23,7 @@ const SuperAdminDashboard = () => {
     const [leadForm, setLeadForm] = useState({ name: '', email: '', collegeId: '' });
     const [facultyForm, setFacultyForm] = useState({ name: '', email: '', leadFacultyId: '' });
     const [studentForm, setStudentForm] = useState({ name: '', email: '', collegeId: '' });
+    const [submitting, setSubmitting] = useState(false);
 
     const fetchData = async () => {
         try {
@@ -44,6 +45,7 @@ const SuperAdminDashboard = () => {
 
     const handleSubmit = async (e, type) => {
         e.preventDefault();
+        setSubmitting(true);
         const config = { headers: { Authorization: `Bearer ${user.token}` } };
         try {
             let res;
@@ -80,6 +82,8 @@ const SuperAdminDashboard = () => {
             fetchData();
         } catch (error) {
             toast.error(error.response?.data?.message || `Error adding ${type}`);
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -103,8 +107,8 @@ const SuperAdminDashboard = () => {
     return (
         <div className="flex flex-col md:flex-row gap-8 max-w-8xl mx-auto items-start">
             {/* Sidebar Navigation */}
-            <div className="w-full md:w-72 flex-shrink-0">
-                <div className="bg-white rounded-2xl shadow-xl p-6 sticky top-8">
+            <div className="w-full md:w-82 flex-shrink-0 sticky top-24 self-start">
+                <div className="bg-white rounded-2xl shadow-xl p-6">
                     <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 px-2">Menu</h3>
                     <div className="space-y-2">
                         <TabButton id="overview" label="Overview" icon={FaChartPie} />
@@ -145,9 +149,9 @@ const SuperAdminDashboard = () => {
                                 </div>
 
                                 {overviewTab === 'activity' ? (
-                                    <DashboardActivity users={users} />
+                                    <DashboardActivity users={users} colleges={colleges} />
                                 ) : (
-                                    <CollegeHierarchy colleges={colleges} users={users} />
+                                    <CollegeHierarchy colleges={colleges} users={users} refreshData={fetchData} />
                                 )}
                             </div>
                         )}
@@ -162,17 +166,29 @@ const SuperAdminDashboard = () => {
                                     <div className="grid grid-cols-1 gap-6">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">College Name</label>
-                                            <input type="text" placeholder="e.g. Engineering College of Tech" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none transition-all" value={collegeForm.name} onChange={e => setCollegeForm({ ...collegeForm, name: e.target.value })} required />
+                                            <input type="text" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none transition-all" value={collegeForm.name} onChange={e => setCollegeForm({ ...collegeForm, name: e.target.value })} required />
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                                            <input type="text" placeholder="e.g. New York, USA" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none transition-all" value={collegeForm.location} onChange={e => setCollegeForm({ ...collegeForm, location: e.target.value })} required />
+                                            <input type="text" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none transition-all" value={collegeForm.location} onChange={e => setCollegeForm({ ...collegeForm, location: e.target.value })} required />
                                         </div>
                                     </div>
                                 </div>
 
-                                <button type="submit" className="w-full bg-gradient-to-r from-brand-purple to-brand-pink text-white py-4 rounded-xl hover:opacity-95 transition-all font-bold shadow-lg transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2">
-                                    <FaCheckCircle /> Create College
+                                <button
+                                    type="submit"
+                                    disabled={submitting}
+                                    className="w-full bg-gradient-to-r from-brand-purple to-brand-pink text-white py-4 rounded-xl hover:opacity-95 transition-all font-bold shadow-lg transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                                >
+                                    {submitting ? (
+                                        <>
+                                            <FaSpinner className="animate-spin" /> Adding...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FaCheckCircle /> Create College
+                                        </>
+                                    )}
                                 </button>
                             </form>
                         )}
@@ -183,11 +199,11 @@ const SuperAdminDashboard = () => {
                                 <div className="space-y-6">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                                        <input type="text" placeholder="Name" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={leadForm.name} onChange={e => setLeadForm({ ...leadForm, name: e.target.value })} required />
+                                        <input type="text" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={leadForm.name} onChange={e => setLeadForm({ ...leadForm, name: e.target.value })} required />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                                        <input type="email" placeholder="Email" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={leadForm.email} onChange={e => setLeadForm({ ...leadForm, email: e.target.value })} required />
+                                        <input type="email" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={leadForm.email} onChange={e => setLeadForm({ ...leadForm, email: e.target.value })} required />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Assign to College</label>
@@ -196,7 +212,19 @@ const SuperAdminDashboard = () => {
                                             {colleges.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
                                         </select>
                                     </div>
-                                    <button type="submit" className="w-full bg-brand-purple text-white py-3 rounded-xl hover:opacity-90 transition font-bold shadow-md">Assign Lead Faculty</button>
+                                    <button
+                                        type="submit"
+                                        disabled={submitting}
+                                        className="w-full bg-brand-purple text-white py-3 rounded-xl hover:opacity-90 transition font-bold shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    >
+                                        {submitting ? (
+                                            <>
+                                                <FaSpinner className="animate-spin" /> Assigning...
+                                            </>
+                                        ) : (
+                                            'Assign Lead Faculty'
+                                        )}
+                                    </button>
                                 </div>
                             </form>
                         )}
@@ -207,11 +235,11 @@ const SuperAdminDashboard = () => {
                                 <div className="space-y-6">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                                        <input type="text" placeholder="Name" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={facultyForm.name} onChange={e => setFacultyForm({ ...facultyForm, name: e.target.value })} required />
+                                        <input type="text" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={facultyForm.name} onChange={e => setFacultyForm({ ...facultyForm, name: e.target.value })} required />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                                        <input type="email" placeholder="Email" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={facultyForm.email} onChange={e => setFacultyForm({ ...facultyForm, email: e.target.value })} required />
+                                        <input type="email" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={facultyForm.email} onChange={e => setFacultyForm({ ...facultyForm, email: e.target.value })} required />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Reporting To (Lead Faculty)</label>
@@ -220,7 +248,19 @@ const SuperAdminDashboard = () => {
                                             {leadFaculties.map(l => <option key={l._id} value={l._id}>{l.name} ({l.email})</option>)}
                                         </select>
                                     </div>
-                                    <button type="submit" className="w-full bg-brand-purple text-white py-3 rounded-xl hover:opacity-90 transition font-bold shadow-md">Add Faculty</button>
+                                    <button
+                                        type="submit"
+                                        disabled={submitting}
+                                        className="w-full bg-brand-purple text-white py-3 rounded-xl hover:opacity-90 transition font-bold shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    >
+                                        {submitting ? (
+                                            <>
+                                                <FaSpinner className="animate-spin" /> Adding...
+                                            </>
+                                        ) : (
+                                            'Add Faculty'
+                                        )}
+                                    </button>
                                 </div>
                             </form>
                         )}
@@ -231,11 +271,11 @@ const SuperAdminDashboard = () => {
                                 <div className="space-y-6">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                                        <input type="text" placeholder="Name" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={studentForm.name} onChange={e => setStudentForm({ ...studentForm, name: e.target.value })} required />
+                                        <input type="text" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={studentForm.name} onChange={e => setStudentForm({ ...studentForm, name: e.target.value })} required />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                                        <input type="email" placeholder="Email" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={studentForm.email} onChange={e => setStudentForm({ ...studentForm, email: e.target.value })} required />
+                                        <input type="email" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={studentForm.email} onChange={e => setStudentForm({ ...studentForm, email: e.target.value })} required />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">College</label>
@@ -245,7 +285,19 @@ const SuperAdminDashboard = () => {
                                         </select>
                                         <p className="text-xs text-gray-500 mt-1">Student will be automatically assigned to a faculty in this college</p>
                                     </div>
-                                    <button type="submit" className="w-full bg-brand-purple text-white py-3 rounded-xl hover:opacity-90 transition font-bold shadow-md">Add Student</button>
+                                    <button
+                                        type="submit"
+                                        disabled={submitting}
+                                        className="w-full bg-brand-purple text-white py-3 rounded-xl hover:opacity-90 transition font-bold shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    >
+                                        {submitting ? (
+                                            <>
+                                                <FaSpinner className="animate-spin" /> Adding...
+                                            </>
+                                        ) : (
+                                            'Add Student'
+                                        )}
+                                    </button>
                                 </div>
                             </form>
                         )}

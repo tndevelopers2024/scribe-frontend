@@ -3,6 +3,7 @@ import AuthContext from '../../context/AuthContext';
 import axios from 'axios';
 import { FaSpinner, FaComments, FaPaperPlane, FaUserCircle, FaTrash, FaThumbsUp, FaRegThumbsUp, FaReply } from 'react-icons/fa';
 import { API_ENDPOINTS } from '../../config/constants';
+import { formatDate } from '../../utils/dateUtils';
 
 const Feedback = () => {
     const { user } = useContext(AuthContext);
@@ -116,11 +117,11 @@ const Feedback = () => {
                                 <div>
                                     <h4 className="font-bold text-gray-800">{discussion.title}</h4>
                                     <p className="text-xs text-gray-500">
-                                        By {discussion.user.name} • {new Date(discussion.createdAt).toLocaleDateString()}
+                                        By {discussion.user?.name || 'Unknown User'} • {formatDate(discussion.createdAt)}
                                     </p>
                                 </div>
                             </div>
-                            {discussion.user._id === user._id && (
+                            {discussion.user?._id === user._id && (
                                 <button
                                     onClick={() => handleDeletePost(discussion._id)}
                                     className="text-red-400 hover:text-red-600 p-2"

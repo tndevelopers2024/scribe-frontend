@@ -2,15 +2,19 @@ import { useState, useEffect, useContext } from 'react';
 import AuthContext from '../../context/AuthContext';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaSpinner, FaGraduationCap, FaCheck, FaBan, FaInfoCircle, FaClock } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaSpinner, FaGraduationCap, FaCheck, FaBan, FaInfoCircle, FaClock, FaChevronDown, FaChevronUp, FaFlask } from 'react-icons/fa';
 import { API_ENDPOINTS } from '../../config/constants';
+import DeleteConfirmationModal from './DeleteConfirmationModal';
 
-const WorkshopsTraining = ({ isFaculty, studentId, studentData }) => {
+const WorkshopsTraining = ({ isFaculty, studentId, studentData, updatePendingCount }) => {
     const { user } = useContext(AuthContext);
     const [workshops, setWorkshops] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
+    const [expandedRows, setExpandedRows] = useState({});
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
 
     // Review State
     const [reviewModalOpen, setReviewModalOpen] = useState(false);
@@ -85,13 +89,20 @@ const WorkshopsTraining = ({ isFaculty, studentId, studentData }) => {
         setShowForm(true);
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this workshop/training?')) return;
+    const handleDelete = (workshop) => {
+        setItemToDelete(workshop);
+        setDeleteModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!itemToDelete) return;
 
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            await axios.delete(`${API_ENDPOINTS.WORKSHOPS_TRAINING}/${id}`, config);
+            await axios.delete(`${API_ENDPOINTS.WORKSHOPS_TRAINING}/${itemToDelete._id}`, config);
             toast.success('Workshop/Training deleted successfully');
+            setDeleteModalOpen(false);
+            setItemToDelete(null);
             fetchWorkshops();
         } catch (error) {
             toast.error(error.response?.data?.message || 'Error deleting workshop');
@@ -131,6 +142,9 @@ const WorkshopsTraining = ({ isFaculty, studentId, studentData }) => {
             setWorkshops(updated);
 
             toast.success(`Workshop/Training ${status === 'Approved' ? 'Approved' : 'Rejected'} Successfully`);
+            if (updatePendingCount) {
+                updatePendingCount('workshops');
+            }
             setReviewModalOpen(false);
             setSelectedItemForReview(null);
         } catch (error) {
@@ -139,12 +153,30 @@ const WorkshopsTraining = ({ isFaculty, studentId, studentData }) => {
         }
     };
 
-    const getStatusBadge = (status) => {
+    const getStatusBadge = (item) => {
+        const { status, reviewedBy } = item;
+        let reviewerName = '';
+        if (reviewedBy) {
+            if (reviewedBy.profile && (reviewedBy.profile.firstName || reviewedBy.profile.lastName)) {
+                reviewerName = `${reviewedBy.profile.firstName} ${reviewedBy.profile.lastName}`.trim();
+            } else if (reviewedBy.name) {
+                reviewerName = reviewedBy.name;
+            }
+        }
+
         switch (status) {
-            case 'Approved': return <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold flex items-center gap-1"><FaCheck /> Approved</span>;
-            case 'Rejected': return <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold flex items-center gap-1"><FaBan /> Rejected</span>;
+            case 'Approved': return <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold flex items-center gap-1"><FaCheck /> Approved {reviewerName && `by ${reviewerName}`}</span>;
+            case 'Rejected': return <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold flex items-center gap-1"><FaBan /> Rejected {reviewerName && `by ${reviewerName}`}</span>;
+            case 'Resubmitted': return <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold flex items-center gap-1"><FaClock /> Resubmitted</span>;
             default: return <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold flex items-center gap-1"><FaClock /> Pending</span>;
         }
+    };
+
+    const toggleRowExpansion = (id) => {
+        setExpandedRows(prev => ({
+            ...prev,
+            [id]: !prev[id]
+        }));
     };
 
     const resetForm = () => {
@@ -254,7 +286,6 @@ const WorkshopsTraining = ({ isFaculty, studentId, studentData }) => {
                                     onChange={handleChange}
                                     required
                                     rows="4"
-                                    placeholder="Describe the skills and knowledge you gained..."
                                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none"
                                 />
                             </div>
@@ -288,89 +319,131 @@ const WorkshopsTraining = ({ isFaculty, studentId, studentData }) => {
                     {!isFaculty && <p className="text-gray-400 text-sm mt-2">Click "Add Workshop" to get started</p>}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 gap-4">
-                    {workshops.map((workshop) => (
-                        <div
-                            key={workshop._id}
-                            className={`bg-white p-6 rounded-2xl shadow-xl border relative ${workshop.status === 'Rejected' ? 'border-red-200 bg-red-50' :
-                                workshop.status === 'Approved' ? 'border-green-200' : 'border-gray-100'
-                                }`}
-                        >
-                            {/* Verification Status Badge */}
-                            <div className="absolute top-4 right-4">
-                                {getStatusBadge(workshop.status)}
-                            </div>
+                <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+                    {/* Table Header */}
+                    <div className="bg-gradient-to-r from-brand-purple to-purple-600 text-white">
+                        <div className="grid grid-cols-12 gap-4 px-6 py-4 font-semibold text-sm">
+                            <div className="col-span-6">Workshop Name</div>
+                            <div className="col-span-2 text-center">Details</div>
+                            <div className="col-span-2 text-center">Status</div>
+                            <div className="col-span-2 text-right">Actions</div>
+                        </div>
+                    </div>
 
-                            <div className="flex justify-between items-start mb-4 mt-4">
-                                <div className="flex-1 pr-24">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <FaGraduationCap className="text-brand-purple text-2xl" />
-                                        <h3 className="text-xl font-bold text-gray-800">{workshop.nameOfWorkshop}</h3>
-                                    </div>
-                                    <p className="text-sm text-gray-500">Conducted by: {workshop.conductedBy}</p>
+                    {/* Table Body */}
+                    <div className="divide-y divide-gray-200">
+                        {workshops.map((workshop) => (
+                            <div
+                                key={workshop._id}
+                                className={`grid grid-cols-12 gap-4 px-6 py-5 hover:bg-gray-50 transition-colors ${workshop.status === 'Rejected' ? 'bg-red-50/30' :
+                                    workshop.status === 'Approved' ? 'bg-green-50/30' : ''
+                                    }`}
+                            >
+                                {/* Workshop Name */}
+                                <div className="col-span-6 flex items-center gap-2">
+                                    <FaFlask className="text-brand-purple text-lg flex-shrink-0" />
+                                    <p className="text-sm font-medium text-gray-800 line-clamp-1">{workshop.nameOfWorkshop}</p>
                                 </div>
-                                <div className="flex gap-2">
-                                    {!isFaculty && (
+
+                                {/* View Details Toggle */}
+                                <div className="col-span-2 flex items-center justify-center">
+                                    <button
+                                        onClick={() => toggleRowExpansion(workshop._id)}
+                                        className="text-brand-purple hover:underline text-sm font-medium"
+                                    >
+                                        {expandedRows[workshop._id] ? 'Hide' : 'View'} Details
+                                    </button>
+                                </div>
+
+                                {/* Status */}
+                                <div className="col-span-2 flex items-center justify-center">
+                                    {getStatusBadge(workshop)}
+                                </div>
+
+                                {/* Actions */}
+                                <div className="col-span-2 flex items-center justify-end gap-2 text-right">
+                                    {!isFaculty ? (
                                         <>
+                                            {workshop.status !== 'Approved' && (
+                                                <button
+                                                    onClick={() => handleEdit(workshop)}
+                                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                                                    title="Edit"
+                                                >
+                                                    <FaEdit />
+                                                </button>
+                                            )}
                                             <button
-                                                onClick={() => handleEdit(workshop)}
-                                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                                            >
-                                                <FaEdit />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(workshop._id)}
+                                                onClick={() => handleDelete(workshop)}
                                                 className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                                                title="Delete"
                                             >
                                                 <FaTrash />
                                             </button>
                                         </>
+                                    ) : (
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => openReviewModal(workshop, 'Approved')}
+                                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition text-xs font-bold ${workshop.status === 'Approved'
+                                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
+                                                    : 'bg-green-50 text-green-600 hover:bg-green-100'
+                                                    }`}
+                                                disabled={workshop.status === 'Approved'}
+                                            >
+                                                <FaCheck /> Approve
+                                            </button>
+                                            <button
+                                                onClick={() => openReviewModal(workshop, 'Rejected')}
+                                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition text-xs font-bold ${workshop.status === 'Rejected'
+                                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
+                                                    : 'bg-red-50 text-red-600 hover:bg-red-100'
+                                                    }`}
+                                                disabled={workshop.status === 'Rejected'}
+                                            >
+                                                <FaBan /> Reject
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
-                            </div>
-                            <div className="mb-3">
-                                <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                                    {workshop.mode}
-                                </span>
-                            </div>
-                            <div>
-                                <span className="font-medium text-gray-700">Skills Acquired:</span>
-                                <p className="text-gray-600 mt-1">{workshop.skillsAcquired}</p>
-                            </div>
 
-                            {/* Feedback Display */}
-                            {workshop.feedback && (
-                                <div className={`mt-4 p-3 rounded-lg text-sm border ${workshop.status === 'Approved'
-                                    ? 'bg-green-50 border-green-100 text-green-800'
-                                    : 'bg-yellow-50 border-yellow-100 text-yellow-900'
-                                    }`}>
-                                    <strong className="block mb-1 flex items-center gap-1">
-                                        <FaInfoCircle /> Feedback:
-                                    </strong>
-                                    <p className="italic">"{workshop.feedback}"</p>
-                                </div>
-                            )}
+                                {/* Expandable Details Section */}
+                                {expandedRows[workshop._id] && (
+                                    <div className="col-span-12 px-6 pb-6 pt-2 bg-gray-50/50 animate-fade-in">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
+                                            <div>
+                                                <p className="text-xs font-bold text-gray-400 uppercase mb-1">Conducted By</p>
+                                                <p className="text-sm text-gray-700 font-medium">{workshop.conductedBy}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-gray-400 uppercase mb-1">Mode</p>
+                                                <p className="text-sm text-gray-700 font-medium">{workshop.mode}</p>
+                                            </div>
+                                            <div className="col-span-full">
+                                                <p className="text-xs font-bold text-gray-400 uppercase mb-1">Skills Acquired</p>
+                                                <p className="text-sm text-gray-700 font-medium whitespace-pre-wrap leading-relaxed">{workshop.skillsAcquired}</p>
+                                            </div>
 
-                            {/* Faculty Actions */}
-                            {isFaculty && (
-                                <div className="mt-4 pt-4 border-t border-gray-200 flex gap-2">
-                                    <button
-                                        onClick={() => openReviewModal(workshop, 'Approved')}
-                                        className="flex-1 bg-green-50 text-green-600 hover:bg-green-100 px-4 py-2 rounded-lg transition text-sm font-medium flex justify-center items-center gap-2"
-                                        disabled={workshop.status === 'Approved'}
-                                    >
-                                        <FaCheck /> Approve
-                                    </button>
-                                    <button
-                                        onClick={() => openReviewModal(workshop, 'Rejected')}
-                                        className="flex-1 bg-red-50 text-red-600 hover:bg-red-100 px-4 py-2 rounded-lg transition text-sm font-medium flex justify-center items-center gap-2"
-                                    >
-                                        <FaBan /> Reject
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    ))}
+                                            {/* Feedback Display */}
+                                            {workshop.feedback && (
+                                                <div className="col-span-full mt-2 pt-2 border-t border-gray-100">
+                                                    <p className="text-xs font-bold text-gray-400 uppercase mb-2 flex items-center gap-1">
+                                                        <FaInfoCircle /> Faculty Feedback
+                                                    </p>
+                                                    <div className={`p-3 rounded-lg text-sm ${workshop.status === 'Approved'
+                                                        ? 'bg-green-50 text-green-800 border border-green-100'
+                                                        : 'bg-yellow-50 text-yellow-800 border border-yellow-100'
+                                                        }`}>
+                                                        <p className="italic text-sm">"{workshop.feedback}"</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 
@@ -395,7 +468,6 @@ const WorkshopsTraining = ({ isFaculty, studentId, studentData }) => {
                                 value={reviewFeedback}
                                 onChange={(e) => setReviewFeedback(e.target.value)}
                                 rows="4"
-                                placeholder={`Enter your feedback here...`}
                                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none"
                             ></textarea>
                             <div className="flex gap-3 pt-2">
@@ -420,6 +492,14 @@ const WorkshopsTraining = ({ isFaculty, studentId, studentData }) => {
                     </div>
                 </div>
             )}
+
+            <DeleteConfirmationModal
+                isOpen={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                onConfirm={confirmDelete}
+                itemName={itemToDelete?.nameOfWorkshop}
+                isApproved={itemToDelete?.status === 'Approved'}
+            />
         </div>
     );
 };
