@@ -23,6 +23,7 @@ const SuperAdminDashboard = () => {
     const [leadForm, setLeadForm] = useState({ name: '', email: '', collegeId: '' });
     const [facultyForm, setFacultyForm] = useState({ name: '', email: '', leadFacultyId: '' });
     const [studentForm, setStudentForm] = useState({ name: '', email: '', collegeId: '' });
+    const [adminForm, setAdminForm] = useState({ name: '', email: '' });
     const [submitting, setSubmitting] = useState(false);
 
     const fetchData = async () => {
@@ -78,6 +79,19 @@ const SuperAdminDashboard = () => {
                 } else {
                     toast.error(res.data.message || 'Student created but email failed to send', { duration: 6000 });
                 }
+                if (res.data.emailSent) {
+                    toast.success(res.data.message || 'Student created and email sent successfully');
+                } else {
+                    toast.error(res.data.message || 'Student created but email failed to send', { duration: 6000 });
+                }
+            } else if (type === 'admin') {
+                res = await axios.post(`${API_ENDPOINTS.USERS.replace('/api/admin/users', '')}/api/admin/admin`, adminForm, config);
+                setAdminForm({ name: '', email: '' });
+                if (res.data.emailSent) {
+                    toast.success(res.data.message || 'Admin created and email sent successfully');
+                } else {
+                    toast.error(res.data.message || 'Admin created but email failed to send', { duration: 6000 });
+                }
             }
             fetchData();
         } catch (error) {
@@ -112,10 +126,15 @@ const SuperAdminDashboard = () => {
                     <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 px-2">Menu</h3>
                     <div className="space-y-2">
                         <TabButton id="overview" label="Overview" icon={FaChartPie} />
-                        <TabButton id="addCollege" label="Add New College" icon={FaUniversity} />
-                        <TabButton id="addLead" label="Add Lead Faculty" icon={FaUserTie} />
-                        <TabButton id="addFaculty" label="Add Faculty" icon={FaChalkboardTeacher} />
-                        <TabButton id="addStudent" label="Add Student" icon={FaUserGraduate} />
+                        {user?.role === 'Super Admin' && (
+                            <>
+                                <TabButton id="addCollege" label="Add New College" icon={FaUniversity} />
+                                <TabButton id="addLead" label="Add Lead Faculty" icon={FaUserTie} />
+                                <TabButton id="addFaculty" label="Add Faculty" icon={FaChalkboardTeacher} />
+                                <TabButton id="addStudent" label="Add Student" icon={FaUserGraduate} />
+                                <TabButton id="addAdmin" label="Add Admin" icon={FaUserTie} />
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
@@ -296,6 +315,35 @@ const SuperAdminDashboard = () => {
                                             </>
                                         ) : (
                                             'Add Student'
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        )}
+
+                        {activeTab === 'addAdmin' && (
+                            <form onSubmit={(e) => handleSubmit(e, 'admin')} className="bg-white p-8 rounded-2xl shadow-xl">
+                                <h3 className="font-bold text-2xl text-gray-800 mb-6">Add Admin (Read-Only Super Admin)</h3>
+                                <div className="space-y-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                        <input type="text" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={adminForm.name} onChange={e => setAdminForm({ ...adminForm, name: e.target.value })} required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                                        <input type="email" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={adminForm.email} onChange={e => setAdminForm({ ...adminForm, email: e.target.value })} required />
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={submitting}
+                                        className="w-full bg-brand-purple text-white py-3 rounded-xl hover:opacity-90 transition font-bold shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    >
+                                        {submitting ? (
+                                            <>
+                                                <FaSpinner className="animate-spin" /> Adding...
+                                            </>
+                                        ) : (
+                                            'Create Admin'
                                         )}
                                     </button>
                                 </div>

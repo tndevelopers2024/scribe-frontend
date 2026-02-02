@@ -238,7 +238,7 @@ const FacultyDashboard = () => {
                                             <th className="px-8 py-6">Student Explorer</th>
                                             <th className="px-6 py-6 text-center">Batch / Year</th>
                                             <th className="px-6 py-6 text-center">Portfolio Audit</th>
-                                            <th className="px-6 py-6 text-center">Pending Review</th>
+                                            <th className="px-6 py-6 text-center">Status</th>
                                             <th className="px-8 py-6 text-right">Actions</th>
                                         </tr>
                                     </thead>

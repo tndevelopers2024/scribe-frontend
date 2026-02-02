@@ -13,7 +13,7 @@ const Dashboard = () => {
             <Topbar />
 
             <main className="p-6">
-                {user?.role === 'Super Admin' ? <SuperAdminDashboard /> :
+                {(user?.role === 'Super Admin' || user?.role === 'Admin') ? <SuperAdminDashboard /> :
                     (user?.role === 'Faculty' || user?.role === 'Lead Faculty') ? <FacultyDashboard /> :
                         <UserDashboard />}
             </main>
