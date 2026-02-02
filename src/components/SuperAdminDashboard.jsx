@@ -168,7 +168,7 @@ const SuperAdminDashboard = () => {
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 w-full">
+            <div className="flex-1 w-full overflow-auto">
                 <div className="bg-transparent">
 
                     <div className="transition-all duration-500 ease-in-out">
