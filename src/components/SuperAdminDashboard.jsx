@@ -352,7 +352,7 @@ const SuperAdminDashboard = () => {
                         {activeTab === 'addAdmin' && (
                             <>
                                 <form onSubmit={(e) => handleSubmit(e, 'admin')} className="bg-white p-8 rounded-2xl shadow-xl">
-                                    <h3 className="font-bold text-2xl text-gray-800 mb-6">Add Admin (Read-Only Super Admin)</h3>
+                                    <h3 className="font-bold text-2xl text-gray-800 mb-6">Add Admin</h3>
                                     <div className="space-y-6">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
