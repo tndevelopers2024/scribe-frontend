@@ -101,6 +101,34 @@ const SuperAdminDashboard = () => {
         }
     };
 
+    // Delete Confirmation State
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleteTargetId, setDeleteTargetId] = useState(null);
+
+    const handleDeleteClick = (userId) => {
+        setDeleteTargetId(userId);
+        setShowDeleteConfirm(true);
+    };
+
+    const confirmDelete = async () => {
+        try {
+            const config = { headers: { Authorization: `Bearer ${user.token}` } };
+            const baseUrl = API_ENDPOINTS.USERS.replace('/users', '/user');
+            await axios.delete(`${baseUrl}/${deleteTargetId}`, config);
+            toast.success('Admin removed successfully');
+            fetchData();
+            setShowDeleteConfirm(false);
+            setDeleteTargetId(null);
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Error deleting admin');
+        }
+    };
+
+    const cancelDelete = () => {
+        setShowDeleteConfirm(false);
+        setDeleteTargetId(null);
+    };
+
     // Data Filtering for Dropdowns
     const leadFaculties = users.filter(u => u.role === 'Lead Faculty');
     const faculties = users.filter(u => u.role === 'Faculty');
@@ -322,36 +350,111 @@ const SuperAdminDashboard = () => {
                         )}
 
                         {activeTab === 'addAdmin' && (
-                            <form onSubmit={(e) => handleSubmit(e, 'admin')} className="bg-white p-8 rounded-2xl shadow-xl">
-                                <h3 className="font-bold text-2xl text-gray-800 mb-6">Add Admin (Read-Only Super Admin)</h3>
-                                <div className="space-y-6">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                                        <input type="text" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={adminForm.name} onChange={e => setAdminForm({ ...adminForm, name: e.target.value })} required />
+                            <>
+                                <form onSubmit={(e) => handleSubmit(e, 'admin')} className="bg-white p-8 rounded-2xl shadow-xl">
+                                    <h3 className="font-bold text-2xl text-gray-800 mb-6">Add Admin (Read-Only Super Admin)</h3>
+                                    <div className="space-y-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                                            <input type="text" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={adminForm.name} onChange={e => setAdminForm({ ...adminForm, name: e.target.value })} required />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                                            <input type="email" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={adminForm.email} onChange={e => setAdminForm({ ...adminForm, email: e.target.value })} required />
+                                        </div>
+                                        <button
+                                            type="submit"
+                                            disabled={submitting}
+                                            className="w-full bg-brand-purple text-white py-3 rounded-xl hover:opacity-90 transition font-bold shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                        >
+                                            {submitting ? (
+                                                <>
+                                                    <FaSpinner className="animate-spin" /> Adding...
+                                                </>
+                                            ) : (
+                                                'Create Admin'
+                                            )}
+                                        </button>
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                                        <input type="email" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={adminForm.email} onChange={e => setAdminForm({ ...adminForm, email: e.target.value })} required />
+                                </form>
+
+                                {/* List of Admins */}
+                                <div className="bg-white p-8 rounded-2xl shadow-xl mt-8">
+                                    <h3 className="font-bold text-xl text-gray-800 mb-6 border-b pb-4">Existing Admins</h3>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr className="bg-purple-50 text-purple-800 text-sm uppercase">
+                                                    <th className="px-6 py-4 font-bold rounded-l-lg">Name</th>
+                                                    <th className="px-6 py-4 font-bold">Email</th>
+                                                    <th className="px-6 py-4 font-bold rounded-r-lg text-right">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-100">
+                                                {users.filter(u => u.role === 'Admin').sort((a, b) => a.name.localeCompare(b.name)).length > 0 ? (
+                                                    users.filter(u => u.role === 'Admin').sort((a, b) => a.name.localeCompare(b.name)).map(admin => (
+                                                        <tr key={admin._id} className="hover:bg-gray-50 transition-colors">
+                                                            <td className="px-6 py-4 font-medium text-gray-700">{admin.name}</td>
+                                                            <td className="px-6 py-4 text-gray-500">{admin.email}</td>
+                                                            <td className="px-6 py-4 text-right">
+                                                                {user?.role === 'Super Admin' && (
+                                                                    <button
+                                                                        onClick={() => handleDeleteClick(admin._id)}
+                                                                        className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all text-sm font-semibold"
+                                                                    >
+                                                                        Remove
+                                                                    </button>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                ) : (
+                                                    <tr>
+                                                        <td colSpan="3" className="px-6 py-8 text-center text-gray-400 italic">
+                                                            No Admins found. Create one above.
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
                                     </div>
-                                    <button
-                                        type="submit"
-                                        disabled={submitting}
-                                        className="w-full bg-brand-purple text-white py-3 rounded-xl hover:opacity-90 transition font-bold shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                                    >
-                                        {submitting ? (
-                                            <>
-                                                <FaSpinner className="animate-spin" /> Adding...
-                                            </>
-                                        ) : (
-                                            'Create Admin'
-                                        )}
-                                    </button>
                                 </div>
-                            </form>
+                            </>
                         )}
                     </div>
                 </div>
             </div>
+
+            {/* Custom Delete Confirmation Modal */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+                    <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full transform transition-all scale-100 animate-scaleIn">
+                        <div className="text-center">
+                            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-6">
+                                <FaExclamationCircle className="h-8 w-8 text-red-600" />
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">Confirm Delete</h3>
+                            <p className="text-sm text-gray-500 mb-8">
+                                Are you sure you want to remove this Admin? This action cannot be undone.
+                            </p>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={cancelDelete}
+                                    className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDelete}
+                                    className="flex-1 px-4 py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-colors shadow-lg shadow-red-200"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
