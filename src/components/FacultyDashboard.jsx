@@ -97,7 +97,7 @@ const FacultyDashboard = () => {
             'ethicsThroughArt', 'thoughtsToActions'
         ];
 
-        let stats = { total: 0, approved: 0, rejected: 0, pending: 0 };
+        let stats = { total: 0, approved: 0, rejected: 0, pending: 0, resubmitted: 0 };
 
         sections.forEach(section => {
             if (student[section] && Array.isArray(student[section])) {
@@ -106,6 +106,7 @@ const FacultyDashboard = () => {
                     if (item.status === 'Approved') stats.approved++;
                     else if (item.status === 'Rejected') stats.rejected++;
                     else if (item.status === 'Pending') stats.pending++;
+                    else if (item.status === 'Resubmitted') stats.resubmitted++;
                 });
             }
         });
@@ -237,6 +238,7 @@ const FacultyDashboard = () => {
                                             <th className="px-8 py-6">Student Explorer</th>
                                             <th className="px-6 py-6 text-center">Batch / Year</th>
                                             <th className="px-6 py-6 text-center">Portfolio Audit</th>
+                                            <th className="px-6 py-6 text-center">Pending Review</th>
                                             <th className="px-8 py-6 text-right">Actions</th>
                                         </tr>
                                     </thead>
@@ -255,7 +257,7 @@ const FacultyDashboard = () => {
                                                                 <div className="text-[10px] text-gray-400 font-medium">{student.email}</div>
                                                                 {user?.role === 'Lead Faculty' && student.faculty && (
                                                                     <div className="text-[10px] text-brand-purple font-bold mt-0.5">
-                                                                       Reporting Faculty: {student.faculty.name}
+                                                                        Reporting Faculty: {student.faculty.name}
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -277,10 +279,22 @@ const FacultyDashboard = () => {
                                                             <div className="px-2.5 py-1.5 rounded-lg bg-red-50 text-red-600 text-[10px] font-black border border-red-100 shadow-sm" title="Rejected">
                                                                 {stats.rejected} REJ
                                                             </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-6 text-center">
+                                                        <div className="flex flex-col gap-1 items-center">
+                                                            {stats.resubmitted > 0 && (
+                                                                <span className="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 text-xs font-black border border-indigo-100 shadow-sm animate-pulse">
+                                                                    {stats.resubmitted} Resubmitted
+                                                                </span>
+                                                            )}
                                                             {stats.pending > 0 && (
-                                                                <div className="px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-600 text-[10px] font-black border border-amber-100 shadow-sm animate-pulse" title="Pending">
-                                                                    {stats.pending} PEN
-                                                                </div>
+                                                                <span className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-600 text-xs font-black border border-amber-100 shadow-sm">
+                                                                    {stats.pending} Pending
+                                                                </span>
+                                                            )}
+                                                            {stats.resubmitted === 0 && stats.pending === 0 && (
+                                                                <span className="text-gray-300 font-medium text-xs">-</span>
                                                             )}
                                                         </div>
                                                     </td>
