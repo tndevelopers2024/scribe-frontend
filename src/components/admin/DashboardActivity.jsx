@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { FaChartBar, FaCheckCircle, FaClipboardList, FaUsers, FaUniversity, FaTimesCircle, FaChalkboardTeacher } from 'react-icons/fa';
+import { FaChartBar, FaCheckCircle, FaClipboardList, FaUsers, FaUniversity, FaTimesCircle, FaChalkboardTeacher, FaUserTie, FaUserShield, FaClock } from 'react-icons/fa';
 
 const DashboardActivity = ({ users = [], colleges = [] }) => {
     const [selectedCollege, setSelectedCollege] = useState('all');
@@ -114,9 +114,14 @@ const DashboardActivity = ({ users = [], colleges = [] }) => {
         <div className="space-y-8 animate-fade-in">
             {/* Filter Section */}
             <div className="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-gray-100 gap-4">
-                <div className="flex items-center gap-2 text-gray-700 font-semibold">
-                    <FaUniversity className="text-brand-purple" />
-                    <span>Filter Statistics:</span>
+                <div className="flex items-center gap-4 text-gray-700 font-semibold">
+                    <div className="flex items-center gap-2">
+                        <FaUniversity className="text-brand-purple" />
+                        <span>Filter Statistics:</span>
+                    </div>
+                    <span className="text-xs font-medium text-brand-purple bg-purple-50 px-3 py-1 rounded-full border border-purple-100">
+                        Total Colleges: {colleges.length}
+                    </span>
                 </div>
                 <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
                     {/* College Dropdown */}
@@ -154,13 +159,46 @@ const DashboardActivity = ({ users = [], colleges = [] }) => {
 
             {/* Stat Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {/* Row 1: Lead Faculties, Faculties, Admin, Students */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                    <div className="bg-indigo-100 p-3 rounded-xl text-indigo-600"><FaUserTie /></div>
+                    <div>
+                        <p className="text-sm text-gray-500">Lead Faculties</p>
+                        <h4 className="text-2xl font-bold text-gray-800">
+                            {users.filter(u => {
+                                if (u.role !== 'Lead Faculty') return false;
+                                if (selectedCollege === 'all') return true;
+                                return (u.college?._id || u.college) === selectedCollege;
+                            }).length}
+                        </h4>
+                    </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                    <div className="bg-orange-100 p-3 rounded-xl text-orange-600"><FaChalkboardTeacher /></div>
+                    <div>
+                        <p className="text-sm text-gray-500">Faculties</p>
+                        <h4 className="text-2xl font-bold text-gray-800">{availableFaculties.length}</h4>
+                    </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                    <div className="bg-pink-100 p-3 rounded-xl text-pink-600"><FaUserShield /></div>
+                    <div>
+                        <p className="text-sm text-gray-500">Admin</p>
+                        <h4 className="text-2xl font-bold text-gray-800">{users.filter(u => u.role === 'Admin').length}</h4>
+                    </div>
+                </div>
+
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
                     <div className="bg-blue-100 p-3 rounded-xl text-blue-600"><FaUsers /></div>
                     <div>
-                        <p className="text-sm text-gray-500">Total Students</p>
+                        <p className="text-sm text-gray-500">Students</p>
                         <h4 className="text-2xl font-bold text-gray-800">{students.length}</h4>
                     </div>
                 </div>
+
+                {/* Row 2: Total Submissions, Approved, Rejected, Pending */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
                     <div className="bg-purple-100 p-3 rounded-xl text-purple-600"><FaClipboardList /></div>
                     <div>
@@ -168,6 +206,7 @@ const DashboardActivity = ({ users = [], colleges = [] }) => {
                         <h4 className="text-2xl font-bold text-gray-800">{grandTotalSubmissions}</h4>
                     </div>
                 </div>
+
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
                     <div className="bg-green-100 p-3 rounded-xl text-green-600"><FaCheckCircle /></div>
                     <div>
@@ -175,12 +214,23 @@ const DashboardActivity = ({ users = [], colleges = [] }) => {
                         <h4 className="text-2xl font-bold text-gray-800">{grandTotalApproved}</h4>
                     </div>
                 </div>
+
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
                     <div className="bg-red-100 p-3 rounded-xl text-red-600"><FaTimesCircle /></div>
                     <div>
                         <p className="text-sm text-gray-500">Rejected</p>
                         <h4 className="text-2xl font-bold text-gray-800">
                             {grandTotalRejected}
+                        </h4>
+                    </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+                    <div className="bg-amber-100 p-3 rounded-xl text-amber-600"><FaClock /></div>
+                    <div>
+                        <p className="text-sm text-gray-500">Pending</p>
+                        <h4 className="text-2xl font-bold text-gray-800">
+                            {grandTotalSubmissions - (grandTotalApproved + grandTotalRejected)}
                         </h4>
                     </div>
                 </div>

@@ -3,7 +3,7 @@ import axios from 'axios';
 import AuthContext from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
 import { API_ENDPOINTS } from '../config/constants';
-import { FaChartPie, FaUniversity, FaChalkboardTeacher, FaUserTie, FaUserGraduate, FaArrowRight, FaCheckCircle, FaExclamationCircle, FaSpinner } from 'react-icons/fa';
+import { FaChartPie, FaUniversity, FaChalkboardTeacher, FaUserTie, FaUserGraduate, FaArrowRight, FaCheckCircle, FaExclamationCircle, FaSpinner, FaFileUpload } from 'react-icons/fa';
 
 import DashboardActivity from './admin/DashboardActivity';
 import CollegeHierarchy from './admin/CollegeHierarchy';
@@ -25,6 +25,12 @@ const SuperAdminDashboard = () => {
     const [studentForm, setStudentForm] = useState({ name: '', email: '', collegeId: '' });
     const [adminForm, setAdminForm] = useState({ name: '', email: '' });
     const [submitting, setSubmitting] = useState(false);
+
+    // Bulk Upload State
+    const [bulkFile, setBulkFile] = useState(null);
+    const [previewData, setPreviewData] = useState([]);
+    const [bulkStep, setBulkStep] = useState('upload'); // 'upload', 'review'
+    const [bulkCollegeId, setBulkCollegeId] = useState('');
 
     const fetchData = async () => {
         try {
@@ -101,6 +107,65 @@ const SuperAdminDashboard = () => {
         }
     };
 
+    const handlePreview = async (e) => {
+        e.preventDefault();
+        if (!bulkFile || !bulkCollegeId) {
+            toast.error('Please select a college and a CSV file');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', bulkFile);
+        formData.append('collegeId', bulkCollegeId);
+
+        setSubmitting(true);
+        try {
+            const config = {
+                headers: {
+                    'Authorization': `Bearer ${user.token}`,
+                    'Content-Type': 'multipart/form-data'
+                }
+            };
+            const previewUrl = `${API_ENDPOINTS.USERS.replace('/users', '')}/preview-students`; // Construct URL manually if needed or add to constants
+            // Actually API_ENDPOINTS.USERS is /api/admin/users. we want /api/admin/preview-students
+            const res = await axios.post(previewUrl, formData, config);
+
+            setPreviewData(res.data.students);
+            setBulkStep('review');
+            toast.success('Preview generated successfully');
+        } catch (error) {
+            console.error(error);
+            toast.error(error.response?.data?.message || 'Error generating preview');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleConfirmBulk = async () => {
+        setSubmitting(true);
+        try {
+            const config = { headers: { Authorization: `Bearer ${user.token}` } };
+            const confirmUrl = `${API_ENDPOINTS.USERS.replace('/users', '')}/confirm-students`;
+
+            const res = await axios.post(confirmUrl, {
+                students: previewData,
+                collegeId: bulkCollegeId
+            }, config);
+
+            toast.success(res.data.message);
+            // Reset
+            setBulkFile(null);
+            setPreviewData([]);
+            setBulkStep('upload');
+            setBulkCollegeId('');
+        } catch (error) {
+            console.error(error);
+            toast.error(error.response?.data?.message || 'Error confirming upload');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     // Delete Confirmation State
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deleteTargetId, setDeleteTargetId] = useState(null);
@@ -160,6 +225,7 @@ const SuperAdminDashboard = () => {
                                 <TabButton id="addLead" label="Add Lead Faculty" icon={FaUserTie} />
                                 <TabButton id="addFaculty" label="Add Faculty" icon={FaChalkboardTeacher} />
                                 <TabButton id="addStudent" label="Add Student" icon={FaUserGraduate} />
+                                {/* <TabButton id="bulkStudent" label="Batch Student Upload" icon={FaFileUpload} /> */}
                                 <TabButton id="addAdmin" label="Add Admin" icon={FaUserTie} />
                             </>
                         )}
@@ -347,6 +413,129 @@ const SuperAdminDashboard = () => {
                                     </button>
                                 </div>
                             </form>
+                        )}
+
+                        {activeTab === 'bulkStudent' && (
+                            <div className="bg-white p-8 rounded-2xl shadow-xl">
+                                <h3 className="font-bold text-2xl text-gray-800 mb-6 flex items-center gap-2">
+                                    <FaFileUpload className="text-brand-purple" /> Batch Student Upload
+                                </h3>
+
+                                {bulkStep === 'upload' ? (
+                                    <form onSubmit={handlePreview} className="space-y-6">
+                                        <div className="p-4 bg-purple-50 rounded-xl border border-purple-100 text-sm text-purple-800">
+                                            <p className="font-semibold mb-1">Instructions:</p>
+                                            <ul className="list-disc pl-5 space-y-1">
+                                                <li>For best results, upload a <strong>.csv</strong> file.</li>
+                                                <li>The CSV should have headers: <strong>Name, Email</strong>.</li>
+                                                <li>This tool will automatically distribute students among the faculties of the selected college to ensure balanced load.</li>
+                                            </ul>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Select Target College</label>
+                                            <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none bg-white" value={bulkCollegeId} onChange={e => setBulkCollegeId(e.target.value)} required>
+                                                <option value="">Select College</option>
+                                                {colleges.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Upload CSV File</label>
+                                            <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:bg-gray-50 transition-colors cursor-pointer relative">
+                                                <input
+                                                    type="file"
+                                                    accept=".csv"
+                                                    onChange={(e) => setBulkFile(e.target.files[0])}
+                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                    required
+                                                />
+                                                <div className="flex flex-col items-center justify-center gap-2 pointer-events-none">
+                                                    <FaFileUpload className="text-4xl text-gray-400" />
+                                                    <p className="text-gray-600 font-medium">
+                                                        {bulkFile ? bulkFile.name : 'Click to select or drag and drop CSV file'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            type="submit"
+                                            disabled={submitting}
+                                            className="w-full bg-brand-purple text-white py-3 rounded-xl hover:opacity-90 transition font-bold shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                        >
+                                            {submitting ? (
+                                                <>
+                                                    <FaSpinner className="animate-spin" /> Generating Preview...
+                                                </>
+                                            ) : (
+                                                'Generate Preview'
+                                            )}
+                                        </button>
+                                    </form>
+                                ) : (
+                                    <div className="space-y-6">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h4 className="font-bold text-lg text-gray-700">Preview Distribution</h4>
+                                            <button
+                                                onClick={() => setBulkStep('upload')}
+                                                className="text-sm text-gray-500 hover:text-gray-700 underline"
+                                            >
+                                                Cancel & Re-upload
+                                            </button>
+                                        </div>
+
+                                        <div className="overflow-x-auto border border-gray-100 rounded-xl">
+                                            <table className="w-full text-left text-sm">
+                                                <thead className="bg-gray-50 text-gray-600 uppercase">
+                                                    <tr>
+                                                        <th className="px-4 py-3 font-bold">S.No.</th>
+                                                        <th className="px-4 py-3 font-bold">Student Name</th>
+                                                        <th className="px-4 py-3 font-bold">Email</th>
+                                                        <th className="px-4 py-3 font-bold">Assigned To (Faculty)</th>
+                                                        <th className="px-4 py-3 font-bold">Role</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-100">
+                                                    {previewData.map((std, idx) => (
+                                                        <tr key={idx} className="hover:bg-gray-50">
+                                                            <td className="px-4 py-3 text-gray-500 font-medium">{idx + 1}</td>
+                                                            <td className="px-4 py-3">{std.name}</td>
+                                                            <td className="px-4 py-3">{std.email}</td>
+                                                            <td className="px-4 py-3 font-medium text-brand-purple">
+                                                                {std.assignedFacultyName} <br />
+                                                                <span className="text-xs text-gray-400 font-normal">{std.assignedFacultyEmail}</span>
+                                                            </td>
+                                                            <td className="px-4 py-3 text-gray-500">Student</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        <div className="flex items-center justify-end gap-4 pt-4 border-t">
+                                            <p className="text-sm text-gray-500">
+                                                Review the assignments above. Clicking confirm will create these accounts and email credentials.
+                                            </p>
+                                            <button
+                                                onClick={handleConfirmBulk}
+                                                disabled={submitting}
+                                                className="bg-green-600 text-white px-8 py-3 rounded-xl hover:bg-green-700 transition font-bold shadow-md disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+                                            >
+                                                {submitting ? (
+                                                    <>
+                                                        <FaSpinner className="animate-spin" /> Processing...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <FaCheckCircle /> Confirm & Upload
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         )}
 
                         {activeTab === 'addAdmin' && (
