@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUniversity, FaUserTie, FaChalkboardTeacher, FaUserGraduate, FaArrowLeft, FaEye, FaStar, FaChevronRight, FaArrowRight, FaTrash, FaExchangeAlt, FaArrowUp, FaUserShield } from 'react-icons/fa';
+import { FaUniversity, FaUserTie, FaChalkboardTeacher, FaUserGraduate, FaArrowLeft, FaEye, FaStar, FaChevronRight, FaArrowRight, FaTrash, FaExchangeAlt, FaArrowUp, FaUserShield, FaSearch } from 'react-icons/fa';
 import { API_ENDPOINTS } from '../../config/constants';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
@@ -15,6 +15,7 @@ const CollegeHierarchy = ({ colleges, users, refreshData }) => {
     const [selectedCollege, setSelectedCollege] = useState(null);
     const [selectedLead, setSelectedLead] = useState(null);
     const [selectedFaculty, setSelectedFaculty] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
 
     // Management State
     const [deleteModal, setDeleteModal] = useState({ open: false, type: '', id: '', name: '' });
@@ -475,13 +476,27 @@ const CollegeHierarchy = ({ colleges, users, refreshData }) => {
             {/* Students Table Section */}
             {view === 'students' && selectedFaculty && (
                 <div id="student-section" className="mt-16 border-t border-gray-100 pt-12 px-4 animate-fade-in-up">
-                    <div className="flex items-center gap-4 mb-8">
-                        <div className="p-4 bg-brand-purple/10 rounded-2xl text-brand-purple text-2xl">
-                            <FaUserGraduate />
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                        <div className="flex items-center gap-4">
+                            <div className="p-4 bg-brand-purple/10 rounded-2xl text-brand-purple text-2xl">
+                                <FaUserGraduate />
+                            </div>
+                            <div>
+                                <h3 className="text-3xl font-bold text-gray-800">Student Portfolio Overview</h3>
+                                <p className="text-gray-500">Managing students under <span className="font-bold text-brand-purple">{selectedFaculty.name}</span></p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 className="text-3xl font-bold text-gray-800">Student Portfolio Overview</h3>
-                            <p className="text-gray-500">Managing students under <span className="font-bold text-brand-purple">{selectedFaculty.name}</span></p>
+
+                        {/* Search Bar */}
+                        <div className="relative w-full max-w-md">
+                            <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Search students by name or email..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-purple/50 focus:border-transparent transition-all shadow-sm"
+                            />
                         </div>
                     </div>
 
@@ -498,65 +513,75 @@ const CollegeHierarchy = ({ colleges, users, refreshData }) => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
-                                    {getStudents(selectedFaculty._id).map(student => {
-                                        const stats = getStudentStats(student);
-                                        const completion = stats.total > 0 ? Math.round((stats.approved / stats.total) * 100) : 0;
-                                        return (
-                                            <tr key={student._id} className="hover:bg-purple-50/30 transition-colors duration-300">
-                                                <td className="px-8 py-5 font-medium text-gray-800">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-100 to-blue-50 text-brand-purple flex items-center justify-center text-sm font-bold shadow-sm border border-white">
-                                                            {student.name.charAt(0)}
+                                    {getStudents(selectedFaculty._id)
+                                        .filter(student =>
+                                            student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                            student.email.toLowerCase().includes(searchTerm.toLowerCase())
+                                        )
+                                        .sort((a, b) => a.name.localeCompare(b.name))
+                                        .map(student => {
+                                            const stats = getStudentStats(student);
+                                            const completion = stats.total > 0 ? Math.round((stats.approved / stats.total) * 100) : 0;
+                                            return (
+                                                <tr key={student._id} className="hover:bg-purple-50/30 transition-colors duration-300">
+                                                    <td className="px-8 py-5 font-medium text-gray-800">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-100 to-blue-50 text-brand-purple flex items-center justify-center text-sm font-bold shadow-sm border border-white">
+                                                                {student.name.charAt(0)}
+                                                            </div>
+                                                            <div>
+                                                                <div className="font-bold text-base">{student.name}</div>
+                                                                <div className="text-xs text-gray-400">{student.email}</div>
+                                                            </div>
                                                         </div>
-                                                        <div>
-                                                            <div className="font-bold text-base">{student.name}</div>
-                                                            <div className="text-xs text-gray-400">{student.email}</div>
+                                                    </td>
+                                                    <td className="px-8 py-5">
+                                                        <div className="flex items-center gap-2 text-amber-500 font-bold bg-amber-50 px-3 py-1 rounded-full w-fit border border-amber-100">
+                                                            <FaStar className="text-sm" /> {student.points || 0}
                                                         </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-8 py-5">
-                                                    <div className="flex items-center gap-2 text-amber-500 font-bold bg-amber-50 px-3 py-1 rounded-full w-fit border border-amber-100">
-                                                        <FaStar className="text-sm" /> {student.points || 0}
-                                                    </div>
-                                                </td>
-                                                <td className="px-8 py-5">
-                                                    <div className="text-xs font-medium">
-                                                        <span className="text-green-600 bg-green-50 px-2 py-0.5 rounded text-sm font-bold">{stats.approved}</span>
-                                                        <span className="text-gray-400 mx-2">of</span>
-                                                        <span className="text-gray-700 font-bold text-sm">{stats.total}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-8 py-5 text-center">
-                                                    <div className="w-32 mx-auto bg-gray-100 h-2.5 rounded-full overflow-hidden shadow-inner">
-                                                        <div className={`h-full rounded-full transition-all duration-1000 ${completion === 100 ? 'bg-green-500' : 'bg-brand-purple'}`} style={{ width: `${completion}%` }}></div>
-                                                    </div>
-                                                    <span className="text-xs font-bold text-gray-400 mt-2 block">{completion}% Complete</span>
-                                                </td>
-                                                <td className="px-8 py-5 text-right flex items-center justify-end gap-2">
-                                                    <button
-                                                        onClick={() => setDeleteModal({ open: true, type: 'User', id: student._id, name: student.name })}
-                                                        className="p-2.5 rounded-xl text-red-500 hover:bg-red-50 transition-colors border border-transparent hover:border-red-100"
-                                                        title="Delete Student"
-                                                    >
-                                                        <FaTrash />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleViewStudent(student._id)}
-                                                        className="bg-brand-purple text-white hover:bg-purple-700 px-5 py-2.5 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 text-xs font-bold inline-flex items-center gap-2"
-                                                    >
-                                                        <FaEye /> View Portfolio
-                                                    </button>
+                                                    </td>
+                                                    <td className="px-8 py-5">
+                                                        <div className="text-xs font-medium">
+                                                            <span className="text-green-600 bg-green-50 px-2 py-0.5 rounded text-sm font-bold">{stats.approved}</span>
+                                                            <span className="text-gray-400 mx-2">of</span>
+                                                            <span className="text-gray-700 font-bold text-sm">{stats.total}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-8 py-5 text-center">
+                                                        <div className="w-32 mx-auto bg-gray-100 h-2.5 rounded-full overflow-hidden shadow-inner">
+                                                            <div className={`h-full rounded-full transition-all duration-1000 ${completion === 100 ? 'bg-green-500' : 'bg-brand-purple'}`} style={{ width: `${completion}%` }}></div>
+                                                        </div>
+                                                        <span className="text-xs font-bold text-gray-400 mt-2 block">{completion}% Complete</span>
+                                                    </td>
+                                                    <td className="px-8 py-5 text-right flex items-center justify-end gap-2">
+                                                        <button
+                                                            onClick={() => setDeleteModal({ open: true, type: 'User', id: student._id, name: student.name })}
+                                                            className="p-2.5 rounded-xl text-red-500 hover:bg-red-50 transition-colors border border-transparent hover:border-red-100"
+                                                            title="Delete Student"
+                                                        >
+                                                            <FaTrash />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleViewStudent(student._id)}
+                                                            className="bg-brand-purple text-white hover:bg-purple-700 px-5 py-2.5 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 text-xs font-bold inline-flex items-center gap-2"
+                                                        >
+                                                            <FaEye /> View Portfolio
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    {getStudents(selectedFaculty._id)
+                                        .filter(student =>
+                                            student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                            student.email.toLowerCase().includes(searchTerm.toLowerCase())
+                                        ).length === 0 && (
+                                            <tr>
+                                                <td colSpan="5" className="px-8 py-16 text-center text-gray-400 italic">
+                                                    {searchTerm ? 'No students found matching your search.' : 'No students found under this faculty.'}
                                                 </td>
                                             </tr>
-                                        );
-                                    })}
-                                    {getStudents(selectedFaculty._id).length === 0 && (
-                                        <tr>
-                                            <td colSpan="5" className="px-8 py-16 text-center text-gray-400 italic">
-                                                No students found under this faculty.
-                                            </td>
-                                        </tr>
-                                    )}
+                                        )}
                                 </tbody>
                             </table>
                         </div>
