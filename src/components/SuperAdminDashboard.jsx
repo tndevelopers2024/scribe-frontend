@@ -7,6 +7,7 @@ import { FaChartPie, FaUniversity, FaChalkboardTeacher, FaUserTie, FaUserGraduat
 
 import DashboardActivity from './admin/DashboardActivity';
 import CollegeHierarchy from './admin/CollegeHierarchy';
+import SeminarManagement from './admin/SeminarManagement';
 
 const SuperAdminDashboard = () => {
     const { user } = useContext(AuthContext);
@@ -219,14 +220,15 @@ const SuperAdminDashboard = () => {
                     <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 px-2">Menu</h3>
                     <div className="space-y-2">
                         <TabButton id="overview" label="Overview" icon={FaChartPie} />
-                        {user?.role === 'Super Admin' && (
+                        {(user?.role === 'Super Admin' || user?.role === 'Developer') && (
                             <>
                                 <TabButton id="addCollege" label="Add New College" icon={FaUniversity} />
                                 <TabButton id="addLead" label="Add Lead Faculty" icon={FaUserTie} />
                                 <TabButton id="addFaculty" label="Add Faculty" icon={FaChalkboardTeacher} />
                                 <TabButton id="addStudent" label="Add Student" icon={FaUserGraduate} />
-                                {/* <TabButton id="bulkStudent" label="Batch Student Upload" icon={FaFileUpload} /> */}
                                 <TabButton id="addAdmin" label="Add Admin" icon={FaUserTie} />
+                                {user?.role === 'Developer' && <TabButton id="bulkStudent" label="Bulk Student Upload" icon={FaFileUpload} />}
+                                {user?.role === 'Developer' && <TabButton id="seminars" label="Seminar Management" icon={FaChalkboardTeacher} />}
                             </>
                         )}
                     </div>
@@ -586,7 +588,7 @@ const SuperAdminDashboard = () => {
                                                             <td className="px-6 py-4 font-medium text-gray-700">{admin.name}</td>
                                                             <td className="px-6 py-4 text-gray-500">{admin.email}</td>
                                                             <td className="px-6 py-4 text-right">
-                                                                {user?.role === 'Super Admin' && (
+                                                                {(user?.role === 'Super Admin' || user?.role === 'Developer') && (
                                                                     <button
                                                                         onClick={() => handleDeleteClick(admin._id)}
                                                                         className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all text-sm font-semibold"
@@ -609,6 +611,10 @@ const SuperAdminDashboard = () => {
                                     </div>
                                 </div>
                             </>
+                        )}
+
+                        {activeTab === 'seminars' && (
+                            <SeminarManagement />
                         )}
                     </div>
                 </div>

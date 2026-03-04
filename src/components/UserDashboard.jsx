@@ -41,6 +41,8 @@ import ClinicalExperiences from './portfolio/ClinicalExperiences';
 import VoluntaryParticipation from './portfolio/VoluntaryParticipation';
 import EthicsThroughArt from './portfolio/EthicsThroughArt';
 import ThoughtsToActions from './portfolio/ThoughtsToActions';
+import DriscollReflection from './portfolio/DriscollReflection';
+import SeminarManagement from './admin/SeminarManagement';
 import Feedback from './portfolio/Feedback';
 import { API_ENDPOINTS } from '../config/constants';
 
@@ -161,6 +163,7 @@ const UserDashboard = () => {
             expandable: true,
             children: [
                 { id: 'course-reflection', label: 'Course Reflection', icon: FaBook },
+                { id: 'driscoll-reflection', label: "Driscoll's Reflection", icon: FaLightbulb },
                 { id: 'be-the-change', label: 'Be the Change', icon: FaHeart }
             ]
         },
@@ -371,6 +374,7 @@ const UserDashboard = () => {
                         <Route path="profile" element={<ProfileDetails />} />
                         <Route path="academic" element={<AcademicAchievements />} />
                         <Route path="course-reflection" element={<CourseReflection />} />
+                        <Route path="driscoll-reflection" element={<DriscollReflection />} />
                         <Route path="be-the-change" element={<BeTheChange />} />
                         <Route path="research" element={<ResearchPublications />} />
                         <Route path="collaboration" element={<InterdisciplinaryCollaboration />} />

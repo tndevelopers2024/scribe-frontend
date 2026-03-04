@@ -25,6 +25,10 @@ export const API_ENDPOINTS = {
     THOUGHTS_TO_ACTIONS: `${API_URL}/api/profile/thoughts-to-actions`,
     DISCUSSIONS: `${API_URL}/api/discussions`,
     UPLOAD: `${API_URL}/api/upload`,
+    SEMINARS: `${API_URL}/api/seminars`,
+    DRISCOLL_REFLECTION: `${API_URL}/api/reflections/driscoll`,
+    MY_DRISCOLL_REFLECTIONS: `${API_URL}/api/reflections/driscoll/my`,
+    REVIEW_DRISCOLL_REFLECTION: `${API_URL}/api/reflections/driscoll/review`,
 
     // Admin
     COLLEGES: `${API_URL}/api/admin/colleges`,

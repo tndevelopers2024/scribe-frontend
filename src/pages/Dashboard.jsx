@@ -15,10 +15,10 @@ const Dashboard = () => {
             <Topbar />
 
             {/* Show First Login Password Change Modal */}
-            {user?.isFirstLogin && user?.role !== 'Super Admin' && <FirstLoginModal />}
+            {user?.isFirstLogin && !['Super Admin', 'Admin', 'Developer'].includes(user?.role) && <FirstLoginModal />}
 
             <main className="p-6">
-                {(user?.role === 'Super Admin' || user?.role === 'Admin') ? <SuperAdminDashboard /> :
+                {(user?.role === 'Super Admin' || user?.role === 'Admin' || user?.role === 'Developer') ? <SuperAdminDashboard /> :
                     (user?.role === 'Faculty' || user?.role === 'Lead Faculty') ? <FacultyDashboard /> :
                         <UserDashboard />}
             </main>

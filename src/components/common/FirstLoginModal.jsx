@@ -12,6 +12,11 @@ const FirstLoginModal = () => {
         newPassword: '',
         confirmPassword: ''
     });
+
+    // Guard: Don't render if not first login or if user is Super Admin/Developer
+    if (!user || !user.isFirstLogin || user.role === 'Super Admin' || user.role === 'Developer') {
+        return null;
+    }
     const [submitting, setSubmitting] = useState(false);
     const [showPasswords, setShowPasswords] = useState({
         current: false,

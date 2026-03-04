@@ -25,6 +25,7 @@ import ClinicalExperiences from '../components/portfolio/ClinicalExperiences';
 import VoluntaryParticipation from '../components/portfolio/VoluntaryParticipation';
 import EthicsThroughArt from '../components/portfolio/EthicsThroughArt';
 import ThoughtsToActions from '../components/portfolio/ThoughtsToActions';
+import DriscollReflection from '../components/portfolio/DriscollReflection';
 import Feedback from '../components/portfolio/Feedback';
 
 const FacultyStudentPortfolio = () => {
@@ -88,7 +89,8 @@ const FacultyStudentPortfolio = () => {
             icon: FaLightbulb,
             children: [
                 { id: 'reflections', label: 'Course Reflection', icon: FaBook },
-                { id: 'bethechange', label: 'Be the Change', icon: FaLightbulb }
+                { id: 'bethechange', label: 'Be the Change', icon: FaLightbulb },
+                { id: 'seminar-reflections', label: 'Seminar Reflections', icon: FaLightbulb }
             ]
         },
         {
@@ -118,16 +120,15 @@ const FacultyStudentPortfolio = () => {
     ];
 
     const getPendingCount = (itemId) => {
-        // Direct match
-        if (pendingCounts[itemId]) return pendingCounts[itemId];
-
         // Map UI IDs to API response IDs if they differ
         const mapping = {
             'reflections': 'reflections', // Course Reflection
+            'seminar-reflections': 'driscollReflections',
             'achievements': 'achievements'
         };
 
-        return pendingCounts[itemId] || 0;
+        const apiKey = mapping[itemId] || itemId;
+        return pendingCounts[apiKey] || 0;
     };
 
     const updatePendingCount = (sectionId) => {
@@ -188,7 +189,7 @@ const FacultyStudentPortfolio = () => {
                                         {/* Children Items (Always Visible/Expanded) */}
                                         <div className="ml-4 space-y-1 border-l-2 border-gray-100 pl-2">
                                             {section.children.map((child) => {
-                                                const count = pendingCounts[child.id] || 0;
+                                                const count = getPendingCount(child.id);
                                                 return (
                                                     <Link
                                                         key={child.id}
@@ -228,12 +229,12 @@ const FacultyStudentPortfolio = () => {
                                             <section.icon className="text-lg" />
                                             {section.label}
                                         </div>
-                                        {(pendingCounts[section.id] || 0) > 0 && (
+                                        {getPendingCount(section.id) > 0 && (
                                             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center shadow-sm ${currentPath === section.id
                                                 ? 'bg-white text-brand-purple'
                                                 : 'bg-brand-purple text-white'
                                                 }`}>
-                                                {pendingCounts[section.id]}
+                                                {getPendingCount(section.id)}
                                             </span>
                                         )}
                                     </Link>
@@ -309,6 +310,7 @@ const FacultyStudentPortfolio = () => {
                             <Route path="voluntary" element={<VoluntaryParticipation {...props} />} />
                             <Route path="ethics" element={<EthicsThroughArt {...props} />} />
                             <Route path="thoughts" element={<ThoughtsToActions {...props} />} />
+                            <Route path="seminar-reflections" element={<DriscollReflection {...props} />} />
                             <Route path="feedback" element={<Feedback {...props} />} />
                         </Routes>
                     </div>
