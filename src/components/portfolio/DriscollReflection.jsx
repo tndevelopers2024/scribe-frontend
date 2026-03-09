@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useMemo } from 'react';
 import axios from 'axios';
 import AuthContext from '../../context/AuthContext';
 import { API_ENDPOINTS } from '../../config/constants';
@@ -7,9 +7,12 @@ import {
     FaLightbulb, FaInfoCircle, FaCalendarAlt, FaChevronDown,
     FaChevronUp, FaClock, FaCheckCircle, FaExclamationTriangle,
     FaArrowRight, FaQuestionCircle, FaChartLine, FaSpinner, FaTimes,
-    FaCheck, FaBan, FaUser
+    FaCheck, FaBan, FaUser, FaSearch, FaFilter
 } from 'react-icons/fa';
 import reflectionImage from '../../assets/Reflection.png';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { FaSync, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 const ReflectionInfoModal = ({ isOpen, onClose }) => {
     if (!isOpen) return null;
@@ -333,6 +336,11 @@ const DriscollReflection = ({ isFaculty, studentId, studentData, updatePendingCo
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
+    // Filter State
+    const [searchTerm, setSearchTerm] = useState('');
+    const [dateRange, setDateRange] = useState([null, null]);
+    const [startDate, endDate] = dateRange;
+
     // Review State for Faculty
     const [reviewModalOpen, setReviewModalOpen] = useState(false);
     const [selectedItemForReview, setSelectedItemForReview] = useState(null);
@@ -348,14 +356,18 @@ const DriscollReflection = ({ isFaculty, studentId, studentData, updatePendingCo
                     // But we might need seminars to show all possible reflection points or just show what's there
                     // To keep UI consistent, let's fetch ALL seminars, then match student's reflections
                     const seminarsRes = await axios.get(API_ENDPOINTS.SEMINARS, config);
-                    setSeminars(seminarsRes.data);
+                    // Sort seminars date wise initially (ascending - earliest first)
+                    const sortedSeminars = (seminarsRes.data || []).sort((a, b) => new Date(a.date) - new Date(b.date));
+                    setSeminars(sortedSeminars);
                     setUserReflections(studentData.driscollReflections || []);
                 } else {
                     const [seminarsRes, reflectionsRes] = await Promise.all([
                         axios.get(API_ENDPOINTS.SEMINARS, config),
                         axios.get(API_ENDPOINTS.MY_DRISCOLL_REFLECTIONS, config)
                     ]);
-                    setSeminars(seminarsRes.data);
+                    // Sort seminars date wise initially (ascending - earliest first)
+                    const sortedSeminars = (seminarsRes.data || []).sort((a, b) => new Date(a.date) - new Date(b.date));
+                    setSeminars(sortedSeminars);
                     setUserReflections(reflectionsRes.data);
                 }
             } catch (error) {
@@ -385,7 +397,7 @@ const DriscollReflection = ({ isFaculty, studentId, studentData, updatePendingCo
         const endTime = new Date(startTime);
         endTime.setDate(endTime.getDate() + 1);
 
-        if (now < startTime) return { status: 'upcoming', message: 'Starts the day after seminar', color: 'text-blue-500', bgColor: 'bg-blue-50', icon: FaClock };
+        if (now < startTime) return { status: 'upcoming', message: 'Yet to start', color: 'text-blue-500', bgColor: 'bg-blue-50', icon: FaClock };
         if (now > endTime) return { status: 'expired', message: 'Window closed', color: 'text-red-500', bgColor: 'bg-red-50', icon: FaExclamationTriangle };
 
         // active window
@@ -466,7 +478,7 @@ const DriscollReflection = ({ isFaculty, studentId, studentData, updatePendingCo
 
             // Update sidebar badge
             if (updatePendingCount) {
-                updatePendingCount('seminar-reflections');
+                updatePendingCount('reflections');
             }
 
             toast.success(`Reflection ${status} Successfully`);
@@ -477,16 +489,26 @@ const DriscollReflection = ({ isFaculty, studentId, studentData, updatePendingCo
         }
     };
 
+    const filteredSeminars = useMemo(() => {
+        return seminars.filter(seminar => {
+            const matchesSearch = seminar.title.toLowerCase().includes(searchTerm.toLowerCase());
+            const seminarDate = new Date(seminar.date);
+            const matchesStart = startDate ? seminarDate >= new Date(startDate) : true;
+            const matchesEnd = endDate ? seminarDate <= new Date(endDate) : true;
+            return matchesSearch && matchesStart && matchesEnd;
+        });
+    }, [seminars, searchTerm, startDate, endDate]);
+
     return (
-        <div className="max-w-4xl mx-auto p-4 space-y-6">
+        <div className="max-w-8xl mx-auto p-4 space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <div className="bg-brand-purple/10 p-3 rounded-xl text-brand-purple text-2xl">
                         <FaLightbulb />
                     </div>
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-800">Driscoll's Reflection Model</h2>
-                        <p className="text-sm text-gray-500">Structured framework for critical reflection</p>
+                        <h2 className="text-2xl font-bold text-gray-800">Course Reflection</h2>
+                        <p className="text-sm text-gray-500">Reflect on your learning experiences</p>
                     </div>
                 </div>
 
@@ -501,19 +523,70 @@ const DriscollReflection = ({ isFaculty, studentId, studentData, updatePendingCo
 
             <ReflectionInfoModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
 
+            {/* Search and Filters */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+                <div className="flex flex-col md:flex-row gap-4">
+                    {/* Search Input */}
+                    <div className="flex-1 relative">
+                        <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Search by seminar title..."
+                            className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-purple/20 focus:border-brand-purple outline-none transition-all text-sm"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+
+                    {/* Date Filter */}
+                    <div className="flex items-center gap-3">
+                        <div className="relative group">
+                            <DatePicker
+                                selectsRange={true}
+                                startDate={startDate}
+                                endDate={endDate}
+                                onChange={(update) => setDateRange(update)}
+                                isClearable={false}
+                                placeholderText="Filter by date range..."
+                                className="pl-11 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-purple/20 focus:border-brand-purple outline-none transition-all text-sm w-full md:w-64 bg-white cursor-pointer"
+                                calendarClassName="!bg-white !rounded-2xl !shadow-2xl !border-none !p-4 !font-sans animate-scale-in"
+                                dayClassName={(d) => "rounded-lg transition-colors hover:!bg-brand-purple/10"}
+                                nextMonthButtonLabel={<FaChevronRight className="text-brand-purple" />}
+                                previousMonthButtonLabel={<FaChevronLeft className="text-brand-purple" />}
+                                dateFormat="dd/MM/yyyy"
+                            />
+                            <FaCalendarAlt className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-brand-purple transition-colors pointer-events-none" />
+                        </div>
+
+                        {(searchTerm || startDate || endDate) && (
+                            <button
+                                onClick={() => {
+                                    setSearchTerm('');
+                                    setDateRange([null, null]);
+                                }}
+                                className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                                title="Clear All Filters"
+                            >
+                                <FaTimes />
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+
             {/* Seminars Accordion */}
             <div className="space-y-4">
                 {loading ? (
                     <div className="flex justify-center py-12">
                         <FaSpinner className="animate-spin text-brand-purple text-3xl" />
                     </div>
-                ) : seminars.length === 0 ? (
+                ) : filteredSeminars.length === 0 ? (
                     <div className="bg-white p-12 rounded-2xl border border-dashed border-gray-300 text-center text-gray-500">
-                        No seminars available for reflection yet.
+                        {searchTerm || startDate || endDate ? 'No seminars match your filters.' : 'No seminars available for reflection yet.'}
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {seminars.map((seminar) => {
+                        {filteredSeminars.map((seminar) => {
                             const statusInfo = getStatusInfo(seminar);
                             const existing = getReflectionForSeminar(seminar._id);
                             const isExpanded = expandedSeminar === seminar._id;

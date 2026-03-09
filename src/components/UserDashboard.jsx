@@ -30,7 +30,6 @@ import {
 import { toast } from 'react-hot-toast';
 import ProfileDetails from './portfolio/ProfileDetails';
 import AcademicAchievements from './portfolio/AcademicAchievements';
-import CourseReflection from './portfolio/CourseReflection';
 import BeTheChange from './portfolio/BeTheChange';
 import ResearchPublications from './portfolio/ResearchPublications';
 import InterdisciplinaryCollaboration from './portfolio/InterdisciplinaryCollaboration';
@@ -163,7 +162,6 @@ const UserDashboard = () => {
             expandable: true,
             children: [
                 { id: 'course-reflection', label: 'Course Reflection', icon: FaBook },
-                { id: 'driscoll-reflection', label: "Driscoll's Reflection", icon: FaLightbulb },
                 { id: 'be-the-change', label: 'Be the Change', icon: FaHeart }
             ]
         },
@@ -373,8 +371,7 @@ const UserDashboard = () => {
                         <Route path="/" element={<Navigate to="profile" replace />} />
                         <Route path="profile" element={<ProfileDetails />} />
                         <Route path="academic" element={<AcademicAchievements />} />
-                        <Route path="course-reflection" element={<CourseReflection />} />
-                        <Route path="driscoll-reflection" element={<DriscollReflection />} />
+                        <Route path="course-reflection" element={<DriscollReflection />} />
                         <Route path="be-the-change" element={<BeTheChange />} />
                         <Route path="research" element={<ResearchPublications />} />
                         <Route path="collaboration" element={<InterdisciplinaryCollaboration />} />

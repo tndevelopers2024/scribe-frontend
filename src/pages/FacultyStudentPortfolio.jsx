@@ -14,7 +14,6 @@ import Topbar from '../components/Topbar';
 
 import ProfileDetails from '../components/portfolio/ProfileDetails';
 import AcademicAchievements from '../components/portfolio/AcademicAchievements';
-import CourseReflection from '../components/portfolio/CourseReflection';
 import BeTheChange from '../components/portfolio/BeTheChange';
 import ResearchPublications from '../components/portfolio/ResearchPublications';
 import InterdisciplinaryCollaboration from '../components/portfolio/InterdisciplinaryCollaboration';
@@ -89,8 +88,7 @@ const FacultyStudentPortfolio = () => {
             icon: FaLightbulb,
             children: [
                 { id: 'reflections', label: 'Course Reflection', icon: FaBook },
-                { id: 'bethechange', label: 'Be the Change', icon: FaLightbulb },
-                { id: 'seminar-reflections', label: 'Seminar Reflections', icon: FaLightbulb }
+                { id: 'bethechange', label: 'Be the Change', icon: FaLightbulb }
             ]
         },
         {
@@ -122,8 +120,7 @@ const FacultyStudentPortfolio = () => {
     const getPendingCount = (itemId) => {
         // Map UI IDs to API response IDs if they differ
         const mapping = {
-            'reflections': 'reflections', // Course Reflection
-            'seminar-reflections': 'driscollReflections',
+            'reflections': 'driscollReflections', // Now Course Reflection
             'achievements': 'achievements'
         };
 
@@ -299,7 +296,7 @@ const FacultyStudentPortfolio = () => {
                             <Route path="/" element={<Navigate to="profile" replace />} />
                             <Route path="profile" element={<ProfileDetails {...props} />} />
                             <Route path="achievements" element={<AcademicAchievements {...props} />} />
-                            <Route path="reflections" element={<CourseReflection {...props} />} />
+                            <Route path="reflections" element={<DriscollReflection {...props} />} />
                             <Route path="bethechange" element={<BeTheChange {...props} />} />
                             <Route path="research" element={<ResearchPublications {...props} />} />
                             <Route path="collaboration" element={<InterdisciplinaryCollaboration {...props} />} />
@@ -310,7 +307,6 @@ const FacultyStudentPortfolio = () => {
                             <Route path="voluntary" element={<VoluntaryParticipation {...props} />} />
                             <Route path="ethics" element={<EthicsThroughArt {...props} />} />
                             <Route path="thoughts" element={<ThoughtsToActions {...props} />} />
-                            <Route path="seminar-reflections" element={<DriscollReflection {...props} />} />
                             <Route path="feedback" element={<Feedback {...props} />} />
                         </Routes>
                     </div>

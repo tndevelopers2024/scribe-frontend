@@ -1,9 +1,9 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useMemo } from 'react';
 import axios from 'axios';
 import AuthContext from '../../context/AuthContext';
 import { API_ENDPOINTS } from '../../config/constants';
 import { toast } from 'react-hot-toast';
-import { FaPlus, FaCalendarAlt, FaSpinner, FaEdit, FaTrash, FaTimes, FaSave, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaPlus, FaCalendarAlt, FaSpinner, FaEdit, FaTrash, FaTimes, FaSave, FaChevronLeft, FaChevronRight, FaSearch, FaFilter } from 'react-icons/fa';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -16,6 +16,9 @@ const SeminarManagement = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editingId, setEditingId] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [dateRange, setDateRange] = useState([null, null]);
+    const [startDate, endDate] = dateRange;
 
     useEffect(() => {
         fetchSeminars();
@@ -25,7 +28,9 @@ const SeminarManagement = () => {
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
             const res = await axios.get(API_ENDPOINTS.SEMINARS, config);
-            setSeminars(res.data);
+            // Sort by date initially (ascending - earliest first)
+            const sortedSeminars = (res.data || []).sort((a, b) => new Date(a.date) - new Date(b.date));
+            setSeminars(sortedSeminars);
         } catch (error) {
             console.error('Error fetching seminars:', error);
             toast.error('Failed to load seminars');
@@ -83,12 +88,23 @@ const SeminarManagement = () => {
     const resetForm = () => {
         setTitle('');
         setDate(new Date());
+        setDateRange([null, null]);
         setIsEditing(false);
         setEditingId(null);
     };
 
+    const filteredSeminars = useMemo(() => {
+        return seminars.filter(seminar => {
+            const matchesSearch = seminar.title.toLowerCase().includes(searchTerm.toLowerCase());
+            const seminarDate = new Date(seminar.date);
+            const matchesStart = startDate ? seminarDate >= new Date(startDate) : true;
+            const matchesEnd = endDate ? seminarDate <= new Date(endDate) : true;
+            return matchesSearch && matchesStart && matchesEnd;
+        });
+    }, [seminars, searchTerm, startDate, endDate]);
+
     return (
-        <div className="max-w-4xl mx-auto p-6 space-y-8 animate-fade-in">
+        <div className="max-w-7xl mx-auto p-6 space-y-8 animate-fade-in">
             {/* Add/Edit Seminar Form */}
             <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 transition-all duration-300">
                 <div className="flex items-center justify-between mb-6">
@@ -202,18 +218,66 @@ const SeminarManagement = () => {
 
             {/* Seminars List */}
             <div className="space-y-4">
-                <h3 className="text-xl font-bold text-gray-800 px-2">Manage Seminars</h3>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2">
+                    <h3 className="text-xl font-bold text-gray-800">Manage Seminars</h3>
+
+                    {/* Filters */}
+                    <div className="flex flex-col md:flex-row gap-3">
+                        <div className="relative">
+                            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
+                            <input
+                                type="text"
+                                placeholder="Search seminars..."
+                                className="pl-9 pr-4 py-2 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-brand-purple/20 outline-none w-full md:w-64"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="relative group">
+                                <DatePicker
+                                    selectsRange={true}
+                                    startDate={startDate}
+                                    endDate={endDate}
+                                    onChange={(update) => setDateRange(update)}
+                                    isClearable={false}
+                                    placeholderText="Filter by date range..."
+                                    className="pl-10 pr-4 py-2 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-brand-purple/20 outline-none w-full md:w-60 bg-white cursor-pointer"
+                                    calendarClassName="!bg-white !rounded-2xl !shadow-2xl !border-none !p-4 !font-sans animate-scale-in"
+                                    dayClassName={(d) => "rounded-lg transition-colors hover:!bg-brand-purple/10"}
+                                    nextMonthButtonLabel={<FaChevronRight className="text-brand-purple" />}
+                                    previousMonthButtonLabel={<FaChevronLeft className="text-brand-purple" />}
+                                    dateFormat="dd/MM/yyyy"
+                                />
+                                <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-brand-purple transition-colors pointer-events-none text-sm" />
+                            </div>
+                            {(searchTerm || startDate || endDate) && (
+                                <button
+                                    onClick={() => {
+                                        setSearchTerm('');
+                                        setDateRange([null, null]);
+                                    }}
+                                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                                    title="Clear Filters"
+                                >
+                                    <FaTimes size={14} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
                 {loading ? (
                     <div className="flex justify-center py-12">
                         <FaSpinner className="animate-spin text-brand-purple text-3xl" />
                     </div>
-                ) : seminars.length === 0 ? (
+                ) : filteredSeminars.length === 0 ? (
                     <div className="bg-white p-12 rounded-2xl border border-dashed border-gray-300 text-center text-gray-500">
-                        No seminars added yet.
+                        {searchTerm || startDate || endDate ? 'No seminars match your filters.' : 'No seminars added yet.'}
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 gap-4">
-                        {seminars.map((seminar) => (
+                        {filteredSeminars.map((seminar) => (
                             <div key={seminar._id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 group hover:shadow-md transition-all flex items-center justify-between">
                                 <div className="flex items-center gap-4">
                                     <div className="bg-brand-purple/5 p-3 rounded-lg text-brand-purple">

@@ -182,13 +182,14 @@ export const generatePortfolioPDF = async (studentData) => {
     generateTable('Academic Achievements', ['Course Name', 'Offered By', 'Mode', 'Duration', 'Status'], academicBody);
 
     // 2. Course Reflections
-    const reflectionsBody = filterApproved(studentData.courseReflections).map(item => [
-        formatDate(item.date),
-        item.topicOfSession,
-        `${item.rating}/5`,
-        item.whatDidILearn
+    const reflectionsBody = filterApproved(studentData.driscollReflections).map(item => [
+        formatDate(item.seminar?.date || item.date),
+        item.seminar?.title || 'Reflection',
+        item.what,
+        item.soWhat,
+        item.nowWhat
     ]);
-    generateTable('Course Reflections', ['Date', 'Topic', 'Rating', 'Key Learning'], reflectionsBody);
+    generateTable('Course Reflections', ['Date', 'Seminar/Topic', 'What?', 'So What?', 'Now What?'], reflectionsBody);
 
     // 3. Be The Change
     const btcBody = filterApproved(studentData.beTheChange).map(item => [
