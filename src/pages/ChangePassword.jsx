@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 import { API_ENDPOINTS } from '../config/constants';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import authIllustration from '../assets/auth_illustration.png';
+import authIllustration from '../assets/doc-lap.jpg';
 import logo from '../assets/images/logo.png';
 
 const ChangePassword = () => {

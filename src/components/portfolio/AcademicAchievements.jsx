@@ -2,10 +2,11 @@ import { useState, useEffect, useContext } from 'react';
 import AuthContext from '../../context/AuthContext';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaSpinner, FaTrophy, FaCheck, FaBan, FaInfoCircle, FaClock, FaChevronDown, FaChevronUp, FaAward, FaGraduationCap } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaSpinner, FaTrophy, FaCheck, FaBan, FaInfoCircle, FaClock, FaChevronDown, FaChevronUp, FaAward, FaGraduationCap, FaFilePdf, FaExternalLinkAlt } from 'react-icons/fa';
 import { API_ENDPOINTS } from '../../config/constants';
 import { formatDate } from '../../utils/dateUtils';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
+import bshmPdf from '../../assets/FINAL-FULL-CURRICULUM-BCC-DR-SKM-Formatted.pdf';
 
 const AcademicAchievements = ({ isFaculty, studentId, studentData, updatePendingCount }) => {
     const { user } = useContext(AuthContext);
@@ -22,6 +23,7 @@ const AcademicAchievements = ({ isFaculty, studentId, studentData, updatePending
     const [selectedItemForReview, setSelectedItemForReview] = useState(null);
     const [reviewFeedback, setReviewFeedback] = useState('');
     const [reviewAction, setReviewAction] = useState('Rejected'); // 'Approved' or 'Rejected'
+    const [pdfModalOpen, setPdfModalOpen] = useState(false);
     const [formData, setFormData] = useState({
         courseName: '',
         offeredBy: '',
@@ -225,6 +227,35 @@ const AcademicAchievements = ({ isFaculty, studentId, studentData, updatePending
             </div>
 
 
+
+            {/* BSHM Enrollment Card */}
+            {!isFaculty && (
+                <div className="bg-gradient-to-r from-brand-purple/5 to-purple-50 p-6 rounded-2xl border border-brand-purple/20 shadow-sm relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <FaGraduationCap className="text-8xl text-brand-purple" />
+                    </div>
+                    <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div className="space-y-2">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-purple text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-sm">
+                                <span className="animate-pulse w-1.5 h-1.5 bg-white rounded-full"></span>
+                                Currently Enrolled
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-800">
+                                Beyond Campus Curriculum
+                            </h3>
+                            <p className="text-brand-purple font-semibold text-sm max-w-2xl">
+                                Bachelor of Humanistic and Socialistic Medicine (BSHM) for Healthcare Providers
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => setPdfModalOpen(true)}
+                            className="flex items-center justify-center gap-2 bg-white text-brand-purple border-2 border-brand-purple px-6 py-3 rounded-xl hover:bg-brand-purple hover:text-white transition-all font-bold shadow-md hover:shadow-brand-purple/20 active:scale-95 whitespace-nowrap"
+                        >
+                            <FaFilePdf /> View Program Details
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Add/Edit Form */}
             {showForm && (
@@ -535,6 +566,37 @@ const AcademicAchievements = ({ isFaculty, studentId, studentData, updatePending
                 itemName={itemToDelete?.courseName}
                 isApproved={itemToDelete?.status === 'Approved'}
             />
+            {/* PDF Details Modal */}
+            {pdfModalOpen && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex justify-center items-center p-4">
+                    <div className="bg-white rounded-3xl w-full max-w-5xl h-[90vh] shadow-2xl overflow-hidden flex flex-col animate-zoom-in">
+                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-brand-purple/10 rounded-2xl">
+                                    <FaFilePdf className="text-brand-purple text-2xl" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-xl text-gray-800">BSHM Program Details</h3>
+                                    <p className="text-xs text-gray-500 font-medium">Beyond Campus Curriculum Portfolio</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setPdfModalOpen(false)}
+                                className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-400 hover:text-gray-600 shadow-sm"
+                            >
+                                <FaTimes className="text-xl" />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-hidden">
+                            <iframe
+                                src={bshmPdf}
+                                title="BSHM Program Curriculum"
+                                className="w-full h-full border-0"
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

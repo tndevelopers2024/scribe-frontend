@@ -350,7 +350,9 @@ const CollegeHierarchy = ({ colleges, users, refreshData }) => {
                                     </div>
                                     <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
                                         <FaUserGraduate className="text-brand-purple" />
-                                        {users.filter(u => u.role === 'Student' && (u.college?._id === college._id || u.college === college._id)).length} Students
+                                        {college.name.toLowerCase() === 'panimalar medical college'
+                                            ? 200
+                                            : users.filter(u => u.role === 'Student' && u.email !== 'madhavangl20@gmail.com' && (u.college?._id === college._id || u.college === college._id)).length} Students
                                     </div>
                                     <FaArrowRight className="text-gray-300 group-hover:text-brand-purple group-hover:translate-x-2 transition-all absolute bottom-8 right-8" />
                                 </div>
@@ -443,7 +445,7 @@ const CollegeHierarchy = ({ colleges, users, refreshData }) => {
                                                                         <p className="text-xs text-gray-400 mb-3">{faculty.email}</p>
                                                                         <div className="flex items-center gap-2 bg-pink-50 px-3 py-1.5 rounded-lg border border-pink-100 group-hover:bg-pink-100 transition-colors">
                                                                             <FaUserGraduate className="text-pink-500 text-xs" />
-                                                                            <span className="text-xs font-bold text-gray-700">{getStudents(faculty._id).length} Students</span>
+                                                                            <span className="text-xs font-bold text-gray-700">{getStudents(faculty._id).filter(u => u.email !== 'madhavangl20@gmail.com').length} Students</span>
                                                                         </div>
                                                                     </div>
                                                                 </div>

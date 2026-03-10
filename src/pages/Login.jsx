@@ -2,7 +2,7 @@ import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import authIllustration from '../assets/auth_illustration.png';
+import authIllustration from '../assets/doc-lap.jpg';
 import logo from '../assets/images/logo.png';
 
 const Login = () => {
@@ -24,9 +24,9 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen flex bg-white font-sans overflow-hidden">
+        <div className="max-h-[88vh] flex bg-white font-sans overflow-hidden">
             {/* Left Side - Illustration (Hidden on mobile) */}
-            <div className="hidden lg:flex lg:w-1/2 relative bg-brand-purple/5 h-screen text-white">
+            <div className="hidden lg:flex lg:w-1/2 relative bg-brand-purple/5 text-white">
                 <div className="absolute inset-0 bg-gradient-to-br from-brand-purple/40 to-brand-pink/30 z-10 max-h-screen" />
                 <img
                     src={authIllustration}
@@ -35,13 +35,7 @@ const Login = () => {
                 />
 
                 {/* Brand Overlay */}
-                <div className="absolute top-12 left-12 z-20">
-                    <div className="flex items-center gap-3">
-                        <div className="w-80 bg-white rounded-xl flex items-center justify-center p-2 shadow-xl ring-4 ring-white/20">
-                            <img src={logo} alt="Scribe Logo" className="w-full h-full object-contain" />
-                        </div>
-                    </div>
-                </div>
+                
 
                 <div className="absolute bottom-12 left-12 right-12 z-20">
                     <h2 className="text-4xl font-extrabold leading-tight mb-4 drop-shadow-lg">
@@ -56,17 +50,23 @@ const Login = () => {
             <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-50/50 relative">
                 <div className="max-w-md w-full">
                     <div className="mb-10 lg:hidden">
-                        <div className="flex items-center gap-2 mb-6 justify-center">
+                        {/* <div className="flex items-center gap-2 mb-6 justify-center">
                             <div className="w-8 h-8 bg-brand-purple rounded-lg flex items-center justify-center text-white font-bold text-sm">
                                 S
                             </div>
                             <h1 className="text-xl font-bold tracking-tight text-gray-900">
                                 SCRIBE
                             </h1>
+                        </div> */}
+                    </div>
+                        <div className="">
+                    <div className="flex max-md:justify-center items-center gap-3">
+                        <div className="w-72 mb-4 bg-white rounded-xl flex items-center justify-center p-2">
+                            <img src={logo} alt="Scribe Logo" className="w-full h-full object-contain" />
                         </div>
                     </div>
-
-                    <div className="mb-10 text-center lg:text-left">
+                </div>
+                    <div className="mb-4 text-center lg:text-left">
                         <h2 className="text-4xl font-black text-gray-900 mb-3 tracking-tight">Welcome Back</h2>
                         <p className="text-gray-500 font-medium text-lg">Sign in to your dashboard</p>
                     </div>
@@ -78,7 +78,7 @@ const Login = () => {
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-3">
                         <div className="space-y-2">
                             <label className="block text-gray-700 text-sm font-bold ml-1">Email Address</label>
                             <input
@@ -134,7 +134,7 @@ const Login = () => {
                     </form>
 
                     <p className="text-center text-gray-500 mt-10 text-sm font-medium">
-                        © {new Date().getFullYear()} SCRIBE ePortfolio • Secure Login
+                        © {new Date().getFullYear()} SCRIBE ePortfolio– Dr. Surapaneni Krishna Mohan. All Rights Reserved. | Secure Login
                     </p>
                 </div>
             </div >

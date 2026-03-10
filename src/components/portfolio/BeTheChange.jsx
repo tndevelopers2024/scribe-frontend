@@ -201,12 +201,17 @@ const BeTheChange = ({ isFaculty, studentId, studentData, updatePendingCount }) 
                     <p className="text-gray-600 mt-1">Reflect on your impact and contributions</p>
                 </div>
                 {!showForm && !isFaculty && (
-                    <button
-                        onClick={() => setShowForm(true)}
-                        className="flex items-center gap-2 bg-brand-purple text-white px-6 py-3 rounded-xl hover:opacity-90 transition font-medium"
-                    >
-                        <FaPlus /> Add Reflection
-                    </button>
+                    <div className="flex flex-col items-end gap-2 text-right">
+                        <button
+                            disabled
+                            className="flex items-center gap-2 bg-gray-300 text-gray-500 px-6 py-3 rounded-xl cursor-not-allowed font-medium shadow-inner"
+                        >
+                            <FaPlus /> Add Reflection
+                        </button>
+                        <p className="text-xs font-semibold text-brand-purple italic flex items-center gap-1 animate-pulse">
+                            <FaClock className="text-[10px]" /> This will enable September 2026
+                        </p>
+                    </div>
                 )}
             </div>
 
@@ -273,8 +278,14 @@ const BeTheChange = ({ isFaculty, studentId, studentData, updatePendingCount }) 
             {reflections.length === 0 ? (
                 <div className="bg-white p-12 rounded-2xl shadow-xl border border-gray-100 text-center">
                     <FaHeart className="text-6xl text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500 text-lg">No reflections added yet</p>
-                    {!isFaculty && <p className="text-gray-400 text-sm mt-2">Click "Add Reflection" to share your impact</p>}
+                    <p className="text-gray-500 text-lg font-medium">No reflections added yet</p>
+                    {!isFaculty && (
+                        <div className="mt-4 flex flex-col items-center">
+                            <span className="px-4 py-2 bg-purple-50 text-brand-purple rounded-full text-sm font-bold border border-purple-100 flex items-center gap-2 shadow-sm">
+                                <FaClock /> Available from September 2026
+                            </span>
+                        </div>
+                    )}
                 </div>
             ) : (
                 <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">

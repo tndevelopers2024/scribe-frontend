@@ -388,20 +388,20 @@ const DriscollReflection = ({ isFaculty, studentId, studentData, updatePendingCo
         const now = new Date();
         const seminarDate = new Date(seminar.date);
 
-        // Window start: 00:00 of the day after seminar
+        // Window start: 6:00 PM on the seminar date
         const startTime = new Date(seminarDate);
-        startTime.setDate(startTime.getDate() + 1);
-        startTime.setHours(0, 0, 0, 0);
+        startTime.setHours(18, 0, 0, 0);
 
-        // Window end: 24 hours after start
-        const endTime = new Date(startTime);
+        // Window end: 10:00 PM on the next day
+        const endTime = new Date(seminarDate);
         endTime.setDate(endTime.getDate() + 1);
+        endTime.setHours(22, 0, 0, 0);
 
-        if (now < startTime) return { status: 'upcoming', message: 'Yet to start', color: 'text-blue-500', bgColor: 'bg-blue-50', icon: FaClock };
-        if (now > endTime) return { status: 'expired', message: 'Window closed', color: 'text-red-500', bgColor: 'bg-red-50', icon: FaExclamationTriangle };
+        if (now < startTime) return { status: 'upcoming', message: 'Yet to start', startTime, endTime, color: 'text-blue-500', bgColor: 'bg-blue-50', icon: FaClock };
+        if (now > endTime) return { status: 'expired', message: 'Window closed', startTime, endTime, color: 'text-red-500', bgColor: 'bg-red-50', icon: FaExclamationTriangle };
 
         // active window
-        return { status: 'active', message: 'Active', endTime, color: 'text-green-500', bgColor: 'bg-green-50', icon: FaClock };
+        return { status: 'active', message: 'Active', startTime, endTime, color: 'text-green-500', bgColor: 'bg-green-50', icon: FaClock };
     };
 
     const handleToggle = (seminar) => {
@@ -635,8 +635,8 @@ const DriscollReflection = ({ isFaculty, studentId, studentData, updatePendingCo
                                                     </div>
                                                     <p>
                                                         {isUpcoming
-                                                            ? `The reflection window will open automatically on ${new Date(new Date(seminar.date).getTime() + 86400000).toLocaleDateString('en-GB')}.`
-                                                            : 'The 24-hour reflection window for this seminar is now closed.'}
+                                                            ? `The reflection window will open automatically on ${new Date(seminar.date).toLocaleDateString('en-GB')} at 6:00 PM.`
+                                                            : `The reflection window for this seminar is now closed (Closed on ${statusInfo.endTime ? new Date(statusInfo.endTime).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) : 'N/A'}).`}
                                                     </p>
                                                 </div>
                                             )}
@@ -754,8 +754,8 @@ const DriscollReflection = ({ isFaculty, studentId, studentData, updatePendingCo
                                                             {existing
                                                                 ? (existing.status === 'Approved'
                                                                     ? 'This reflection has been approved and cannot be edited.'
-                                                                    : 'The reflection window is closed. Editing is no longer possible.')
-                                                                : 'The reflection window for this seminar is closed.'}
+                                                                    : `The reflection window is closed (Closed on ${statusInfo.endTime ? new Date(statusInfo.endTime).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) : 'N/A'}). Editing is no longer possible.`)
+                                                                : `The reflection will be closed on ${statusInfo.endTime ? new Date(statusInfo.endTime).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) : 'N/A'}.`}
                                                         </p>
                                                     </div>
                                                 )}
