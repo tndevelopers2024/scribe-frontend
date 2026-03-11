@@ -25,6 +25,13 @@ const Login = () => {
 
     return (
         <div className="max-h-[88vh] flex bg-white font-sans overflow-hidden">
+            <div className="absolute top-10 left-10 right-0 z-50">
+                        <div className="flex max-md:justify-center items-center gap-3">
+                            <div className="w-60 mb-4 bg-white rounded-xl flex items-center justify-center p-2">
+                                <img src={logo} alt="Scribe Logo" className="w-full h-full object-contain" />
+                            </div>
+                        </div>
+                    </div>
             {/* Left Side - Illustration (Hidden on mobile) */}
             <div className="hidden lg:flex lg:w-1/2 relative bg-brand-purple/5 text-white">
                 <div className="absolute inset-0 bg-gradient-to-br from-brand-purple/40 to-brand-pink/30 z-10 max-h-screen" />
@@ -35,7 +42,7 @@ const Login = () => {
                 />
 
                 {/* Brand Overlay */}
-                
+
 
                 <div className="absolute bottom-12 left-12 right-12 z-20">
                     <h2 className="text-4xl font-extrabold leading-tight mb-4 drop-shadow-lg">
@@ -59,13 +66,13 @@ const Login = () => {
                             </h1>
                         </div> */}
                     </div>
-                        <div className="">
-                    <div className="flex max-md:justify-center items-center gap-3">
-                        <div className="w-72 mb-4 bg-white rounded-xl flex items-center justify-center p-2">
-                            <img src={logo} alt="Scribe Logo" className="w-full h-full object-contain" />
+                    <div className="">
+                        <div className="flex max-md:justify-center items-center gap-3">
+                            <div className="w-90 mb-4 bg-white rounded-xl flex items-center justify-center p-2">
+                                <img src={logo} alt="Scribe Logo" className="w-full h-full object-contain" />
+                            </div>
                         </div>
                     </div>
-                </div>
                     <div className="mb-4 text-center lg:text-left">
                         <h2 className="text-4xl font-black text-gray-900 mb-3 tracking-tight">Welcome Back</h2>
                         <p className="text-gray-500 font-medium text-lg">Sign in to your dashboard</p>

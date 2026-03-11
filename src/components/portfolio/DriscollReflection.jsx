@@ -388,14 +388,14 @@ const DriscollReflection = ({ isFaculty, studentId, studentData, updatePendingCo
         const now = new Date();
         const seminarDate = new Date(seminar.date);
 
-        // Window start: 6:00 PM on the seminar date
+        // Window start: 6:00 PM IST (12:30 PM UTC) on the seminar date
         const startTime = new Date(seminarDate);
-        startTime.setHours(18, 0, 0, 0);
+        startTime.setUTCHours(12, 30, 0, 0);
 
-        // Window end: 10:00 PM on the next day
+        // Window end: 10:00 PM IST (4:30 PM UTC) on the next day
         const endTime = new Date(seminarDate);
-        endTime.setDate(endTime.getDate() + 1);
-        endTime.setHours(22, 0, 0, 0);
+        endTime.setUTCDate(endTime.getUTCDate() + 1);
+        endTime.setUTCHours(16, 30, 0, 0);
 
         if (now < startTime) return { status: 'upcoming', message: 'Yet to start', startTime, endTime, color: 'text-blue-500', bgColor: 'bg-blue-50', icon: FaClock };
         if (now > endTime) return { status: 'expired', message: 'Window closed', startTime, endTime, color: 'text-red-500', bgColor: 'bg-red-50', icon: FaExclamationTriangle };
