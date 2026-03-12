@@ -35,14 +35,15 @@ const CollegeHierarchy = ({ colleges, users, refreshData }) => {
             'researchPublications', 'interdisciplinaryCollaboration',
             'conferenceParticipation', 'competitionsAwards', 'workshopsTraining',
             'clinicalExperiences', 'voluntaryParticipation', 'ethicsThroughArt',
-            'thoughtsToActions'
+            'thoughtsToActions', 'driscollReflections'
         ];
         let total = 0;
         let approved = 0;
         sections.forEach(sec => {
-            if (student[sec]?.length) {
-                total += student[sec].length;
-                approved += student[sec].filter(i => i.status === 'Approved').length;
+            const items = student[sec];
+            if (items && Array.isArray(items)) {
+                total += items.length;
+                approved += items.filter(i => i.status?.toLowerCase() === 'approved').length;
             }
         });
         return { total, approved };

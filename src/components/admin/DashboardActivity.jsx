@@ -57,23 +57,23 @@ const DashboardActivity = ({ users = [], colleges = [] }) => {
 
     // 3. Define Sections and Init Stats
     const sectionsConfig = [
-        { key: 'academicAchievements', label: 'Academic' },
-        { key: 'courseReflections', label: 'Reflections' },
-        { key: 'beTheChange', label: 'Change' },
-        { key: 'researchPublications', label: 'Research' },
-        { key: 'interdisciplinaryCollaboration', label: 'Collab' },
-        { key: 'conferenceParticipation', label: 'Conference' },
-        { key: 'competitionsAwards', label: 'Awards' },
-        { key: 'workshopsTraining', label: 'Workshops' },
-        { key: 'clinicalExperiences', label: 'Clinical' },
-        { key: 'voluntaryParticipation', label: 'Voluntary' },
-        { key: 'ethicsThroughArt', label: 'Ethics' },
-        { key: 'thoughtsToActions', label: 'Thoughts' }
+        { keys: ['academicAchievements'], label: 'Academic' },
+        { keys: ['courseReflections', 'driscollReflections'], label: 'Reflections' },
+        { keys: ['beTheChange'], label: 'Change' },
+        { keys: ['researchPublications'], label: 'Research' },
+        { keys: ['interdisciplinaryCollaboration'], label: 'Collab' },
+        { keys: ['conferenceParticipation'], label: 'Conference' },
+        { keys: ['competitionsAwards'], label: 'Awards' },
+        { keys: ['workshopsTraining'], label: 'Workshops' },
+        { keys: ['clinicalExperiences'], label: 'Clinical' },
+        { keys: ['voluntaryParticipation'], label: 'Voluntary' },
+        { keys: ['ethicsThroughArt'], label: 'Ethics' },
+        { keys: ['thoughtsToActions'], label: 'Thoughts' }
     ];
 
     // Initialize map
     const sectionStats = sectionsConfig.reduce((acc, curr) => {
-        acc[curr.key] = { name: curr.label, Submissions: 0, Approved: 0, Rejected: 0 };
+        acc[curr.label] = { name: curr.label, Submissions: 0, Approved: 0, Rejected: 0 };
         return acc;
     }, {});
 
@@ -84,20 +84,22 @@ const DashboardActivity = ({ users = [], colleges = [] }) => {
     // 4. Iterate and Aggregate
     students.forEach(student => {
         sectionsConfig.forEach(sec => {
-            const items = student[sec.key];
-            if (items && Array.isArray(items)) {
-                const count = items.length;
-                const approvedCount = items.filter(i => i.status === 'Approved').length;
-                const rejectedCount = items.filter(i => i.status === 'Rejected').length;
+            sec.keys.forEach(key => {
+                const items = student[key];
+                if (items && Array.isArray(items)) {
+                    const count = items.length;
+                    const approvedCount = items.filter(i => i.status?.toLowerCase() === 'approved').length;
+                    const rejectedCount = items.filter(i => i.status?.toLowerCase() === 'rejected').length;
 
-                sectionStats[sec.key].Submissions += count;
-                sectionStats[sec.key].Approved += approvedCount;
-                sectionStats[sec.key].Rejected += rejectedCount;
+                    sectionStats[sec.label].Submissions += count;
+                    sectionStats[sec.label].Approved += approvedCount;
+                    sectionStats[sec.label].Rejected += rejectedCount;
 
-                grandTotalSubmissions += count;
-                grandTotalApproved += approvedCount;
-                grandTotalRejected += rejectedCount;
-            }
+                    grandTotalSubmissions += count;
+                    grandTotalApproved += approvedCount;
+                    grandTotalRejected += rejectedCount;
+                }
+            });
         });
     });
 
