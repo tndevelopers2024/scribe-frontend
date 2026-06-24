@@ -388,20 +388,29 @@ const DriscollReflection = ({ isFaculty, studentId, studentData, updatePendingCo
         const now = new Date();
         const seminarDate = new Date(seminar.date);
 
-        // Window start: 6:00 PM IST (12:30 PM UTC) on the seminar date
+        // Window start: 12:00 AM UTC on the seminar date
         const startTime = new Date(seminarDate);
-        startTime.setUTCHours(12, 30, 0, 0);
+        startTime.setUTCHours(0, 0, 0, 0);
 
-        // Window end: 10:00 PM IST (4:30 PM UTC) on the next day
-        const endTime = new Date(seminarDate);
-        endTime.setUTCDate(endTime.getUTCDate() + 1);
-        endTime.setUTCHours(16, 30, 0, 0);
+        // Window end: 10:00 PM IST (4:30 PM UTC) on the next day after seminar or creation
+        const seminarEndTime = new Date(seminarDate);
+        seminarEndTime.setUTCDate(seminarEndTime.getUTCDate() + 1);
+        seminarEndTime.setUTCHours(16, 30, 0, 0);
+
+        const createdDate = new Date(seminar.createdAt || seminar.date);
+        let hasNoTimer = false;
+        // If created after the normal window ended, keep it open indefinitely
+        if (createdDate > seminarEndTime) {
+            hasNoTimer = true;
+        }
+
+        const endTime = hasNoTimer ? null : seminarEndTime;
 
         if (now < startTime) return { status: 'upcoming', message: 'Yet to start', startTime, endTime, color: 'text-blue-500', bgColor: 'bg-blue-50', icon: FaClock };
-        if (now > endTime) return { status: 'expired', message: 'Window closed', startTime, endTime, color: 'text-red-500', bgColor: 'bg-red-50', icon: FaExclamationTriangle };
+        if (endTime && now > endTime) return { status: 'expired', message: 'Window closed', startTime, endTime, color: 'text-red-500', bgColor: 'bg-red-50', icon: FaExclamationTriangle };
 
         // active window
-        return { status: 'active', message: 'Active', startTime, endTime, color: 'text-green-500', bgColor: 'bg-green-50', icon: FaClock };
+        return { status: hasNoTimer ? 'active_no_timer' : 'active', message: 'Active', startTime, endTime, color: 'text-green-500', bgColor: 'bg-green-50', icon: FaClock };
     };
 
     const handleToggle = (seminar) => {
@@ -635,7 +644,7 @@ const DriscollReflection = ({ isFaculty, studentId, studentData, updatePendingCo
                                                     </div>
                                                     <p>
                                                         {isUpcoming
-                                                            ? `The reflection window will open automatically on ${new Date(seminar.date).toLocaleDateString('en-GB')} at 6:00 PM.`
+                                                            ? `The reflection window will open automatically on ${new Date(seminar.date).toLocaleDateString('en-GB')} at midnight.`
                                                             : `The reflection window for this seminar is now closed (Closed on ${statusInfo.endTime ? new Date(statusInfo.endTime).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) : 'N/A'}).`}
                                                     </p>
                                                 </div>

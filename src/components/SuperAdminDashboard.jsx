@@ -195,9 +195,27 @@ const SuperAdminDashboard = () => {
         setDeleteTargetId(null);
     };
 
-    // Data Filtering for Dropdowns
     const leadFaculties = users.filter(u => u.role === 'Lead Faculty');
     const faculties = users.filter(u => u.role === 'Faculty');
+
+    // Filter faculties for bulk upload dropdown based on selected college
+    const bulkFaculties = bulkCollegeId 
+        ? faculties.filter(f => (f.college?._id || f.college) === bulkCollegeId) 
+        : [];
+
+    const handleFacultyChange = (index, facultyId) => {
+        const selectedFaculty = bulkFaculties.find(f => f._id === facultyId);
+        if (!selectedFaculty) return;
+
+        const updatedPreview = [...previewData];
+        updatedPreview[index] = {
+            ...updatedPreview[index],
+            assignedFacultyId: selectedFaculty._id,
+            assignedFacultyName: selectedFaculty.name,
+            assignedFacultyEmail: selectedFaculty.email
+        };
+        setPreviewData(updatedPreview);
+    };
 
     if (loading) return <div className="flex justify-center p-8"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-purple"></div></div>;
 
@@ -504,9 +522,18 @@ const SuperAdminDashboard = () => {
                                                             <td className="px-4 py-3 text-gray-500 font-medium">{idx + 1}</td>
                                                             <td className="px-4 py-3">{std.name}</td>
                                                             <td className="px-4 py-3">{std.email}</td>
-                                                            <td className="px-4 py-3 font-medium text-brand-purple">
-                                                                {std.assignedFacultyName} <br />
-                                                                <span className="text-xs text-gray-400 font-normal">{std.assignedFacultyEmail}</span>
+                                                            <td className="px-4 py-3">
+                                                                <select 
+                                                                    className="w-full px-2 py-1 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-purple/50 focus:outline-none bg-white text-sm"
+                                                                    value={std.assignedFacultyId}
+                                                                    onChange={(e) => handleFacultyChange(idx, e.target.value)}
+                                                                >
+                                                                    {bulkFaculties.map(f => (
+                                                                        <option key={f._id} value={f._id}>
+                                                                            {f.name} ({f.email})
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
                                                             </td>
                                                             <td className="px-4 py-3 text-gray-500">Student</td>
                                                         </tr>
