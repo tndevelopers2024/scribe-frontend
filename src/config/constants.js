@@ -50,4 +50,5 @@ export const API_ENDPOINTS = {
     DELETE_USER: (id) => `${API_URL}/api/admin/user/${id}`,
     UPDATE_COLLEGE_LEAD: (id) => `${API_URL}/api/admin/college/${id}/lead`,
     UPDATE_FACULTY_LEAD: (id) => `${API_URL}/api/admin/user/${id}/lead`,
+    REMOVE_USER_FROM_COLLEGE: (collegeId, userId) => `${API_URL}/api/admin/remove-from-college/${collegeId}/user/${userId}`,
 };

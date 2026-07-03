@@ -51,16 +51,22 @@ const CollegeHierarchy = ({ colleges, users, refreshData }) => {
 
     // Navigation Handlers
     // Management Handlers
-    const confirmDelete = async () => {
+    const confirmDelete = async (permanent = false) => {
         setSubmitting(true);
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            const endpoint = deleteModal.type === 'college'
-                ? API_ENDPOINTS.DELETE_COLLEGE(deleteModal.id)
-                : API_ENDPOINTS.DELETE_USER(deleteModal.id);
+            const isUserDeletion = deleteModal.type === 'User';
+            let endpoint;
+            if (deleteModal.type === 'college') {
+                endpoint = API_ENDPOINTS.DELETE_COLLEGE(deleteModal.id);
+            } else if (permanent) {
+                endpoint = API_ENDPOINTS.DELETE_USER(deleteModal.id);
+            } else {
+                endpoint = API_ENDPOINTS.REMOVE_USER_FROM_COLLEGE(selectedCollege._id, deleteModal.id);
+            }
 
             await axios.delete(endpoint, config);
-            toast.success(`${deleteModal.type === 'college' ? 'College' : 'User'} deleted successfully`);
+            toast.success(`${deleteModal.type === 'college' ? 'College' : 'User'} ${deleteModal.type === 'college' || permanent ? 'permanently deleted' : 'safely removed'} successfully`);
             setDeleteModal({ open: false, type: '', id: '', name: '' });
             if (refreshData) refreshData();
 
@@ -595,27 +601,44 @@ const CollegeHierarchy = ({ colleges, users, refreshData }) => {
             {/* Delete Confirmation Modal */}
             {deleteModal.open && (
                 <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl border border-gray-100">
+                    <div className="bg-white rounded-3xl max-w-2xl w-full p-8 shadow-2xl border border-gray-100">
                         <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center text-red-600 text-3xl mb-6 mx-auto shadow-inner">
                             <FaTrash />
                         </div>
-                        <h3 className="text-2xl font-bold text-center text-gray-800 mb-2">Confirm Delete</h3>
+                        <h3 className="text-2xl font-bold text-center text-gray-800 mb-2">
+                            {deleteModal.type === 'college' ? 'Confirm Delete' : 'Confirm Removal'}
+                        </h3>
                         <p className="text-gray-500 text-center mb-8 italic">
-                            Are you sure you want to delete <span className="font-bold text-red-600">"{deleteModal.name}"</span>? This action is irreversible and will affect associations.
+                            {deleteModal.type === 'college' ? (
+                                <>Are you sure you want to delete <span className="font-bold text-red-600">"{deleteModal.name}"</span>? This action is irreversible and will affect associations.</>
+                            ) : (
+                                <>You can choose to <span className="font-bold text-amber-600">safely remove</span> <span className="font-bold">"{deleteModal.name}"</span> from <span className="font-bold text-brand-purple">"{selectedCollege?.name}"</span>'s hierarchy, or <span className="font-bold text-red-600">permanently delete</span> their entire account from the database.</>
+                            )}
                         </p>
-                        <div className="flex gap-4">
+                        <div className={`grid gap-4 ${deleteModal.type === 'User' ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2'}`}>
                             <button
                                 onClick={() => setDeleteModal({ open: false, type: '', id: '', name: '' })}
-                                className="flex-1 px-6 py-3.5 bg-gray-50 text-gray-600 rounded-xl font-bold border border-gray-200 hover:bg-gray-100 transition-all"
+                                className="px-6 py-3.5 bg-gray-50 text-gray-600 rounded-xl font-bold border border-gray-200 hover:bg-gray-100 transition-all"
                             >
                                 Cancel
                             </button>
+                            
+                            {deleteModal.type === 'User' && (
+                                <button
+                                    onClick={() => confirmDelete(false)}
+                                    disabled={submitting}
+                                    className="px-6 py-3.5 bg-amber-500 text-white rounded-xl font-bold shadow-lg shadow-amber-200 hover:bg-amber-600 transition-all active:scale-[0.98] disabled:opacity-50"
+                                >
+                                    {submitting ? 'Processing...' : 'Remove from College'}
+                                </button>
+                            )}
+
                             <button
-                                onClick={confirmDelete}
+                                onClick={() => confirmDelete(deleteModal.type === 'User')}
                                 disabled={submitting}
-                                className="flex-1 px-6 py-3.5 bg-red-600 text-white rounded-xl font-bold shadow-lg shadow-red-200 hover:bg-red-700 transition-all active:scale-[0.98] disabled:opacity-50"
+                                className="px-6 py-3.5 bg-red-600 text-white rounded-xl font-bold shadow-lg shadow-red-200 hover:bg-red-700 transition-all active:scale-[0.98] disabled:opacity-50"
                             >
-                                {submitting ? 'Deleting...' : 'Yes, Delete'}
+                                {submitting ? 'Processing...' : 'Permanently Delete'}
                             </button>
                         </div>
                     </div>
