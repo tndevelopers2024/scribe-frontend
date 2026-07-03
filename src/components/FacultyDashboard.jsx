@@ -3,15 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 import axios from 'axios';
 import { API_ENDPOINTS } from '../config/constants';
-import { FaUserGraduate, FaSpinner, FaEye, FaArrowLeft, FaChalkboardTeacher, FaUserTie, FaExclamationCircle } from 'react-icons/fa';
+import { FaUserGraduate, FaSpinner, FaEye, FaArrowLeft, FaChalkboardTeacher, FaUserTie, FaExclamationCircle, FaUniversity } from 'react-icons/fa';
 
 const FacultyDashboard = () => {
     const { user } = useContext(AuthContext);
     const navigate = useNavigate();
 
-    const [view, setView] = useState('loading'); // 'loading', 'faculties', 'students'
+    const [view, setView] = useState('loading'); // 'loading', 'colleges', 'faculties', 'students'
     const [faculties, setFaculties] = useState([]);
     const [students, setStudents] = useState([]);
+    const [selectedCollege, setSelectedCollege] = useState(null);
     const [selectedFaculty, setSelectedFaculty] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -30,7 +31,12 @@ const FacultyDashboard = () => {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
             const res = await axios.get(API_ENDPOINTS.FACULTIES(user._id), config);
             setFaculties(res.data);
-            setView('faculties');
+            if (user?.colleges?.length > 1) {
+                setView('colleges');
+            } else {
+                if (user?.colleges?.length === 1) setSelectedCollege(user.colleges[0]);
+                setView('faculties');
+            }
             setError('');
         } catch (err) {
             console.error(err);
@@ -56,6 +62,11 @@ const FacultyDashboard = () => {
         }
     };
 
+    const handleCollegeClick = (college) => {
+        setSelectedCollege(college);
+        setView('faculties');
+    };
+
     const handleFacultyClick = async (faculty) => {
         try {
             setLoading(true);
@@ -73,10 +84,15 @@ const FacultyDashboard = () => {
     };
 
     const handleBack = () => {
-        if (user?.role === 'Lead Faculty' && view === 'students') {
-            setView('faculties');
-            setSelectedFaculty(null);
-            setStudents([]);
+        if (user?.role === 'Lead Faculty') {
+            if (view === 'students') {
+                setView('faculties');
+                setSelectedFaculty(null);
+                setStudents([]);
+            } else if (view === 'faculties' && user.colleges?.length > 1) {
+                setView('colleges');
+                setSelectedCollege(null);
+            }
         }
     };
 
@@ -121,6 +137,20 @@ const FacultyDashboard = () => {
                 <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
                     <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 px-2">Menu</h3>
                     <div className="space-y-3">
+                        {user?.role === 'Lead Faculty' && user.colleges?.length > 1 && (
+                            <button
+                                onClick={() => {
+                                    setView('colleges');
+                                    setSelectedCollege(null);
+                                    setSelectedFaculty(null);
+                                }}
+                                className={`w-full text-left px-5 py-3.5 rounded-xl font-bold transition-all duration-300 flex items-center gap-3 ${view === 'colleges' ? 'bg-gradient-to-r from-brand-purple to-brand-pink text-white shadow-lg shadow-purple-100' : 'text-gray-500 hover:bg-gray-50'}`}
+                            >
+                                <FaUniversity className="text-lg" />
+                                <span>College List</span>
+                                {view === 'colleges' && <FaArrowLeft className="rotate-180 ml-auto text-xs opacity-50" />}
+                            </button>
+                        )}
                         {user?.role === 'Lead Faculty' && (
                             <button
                                 onClick={() => {
@@ -169,10 +199,10 @@ const FacultyDashboard = () => {
                         )}
                         <div>
                             <h2 className="text-3xl font-black text-gray-800 tracking-tight">
-                                {view === 'faculties' ? 'My Faculties' : (selectedFaculty ? `Students under ${selectedFaculty.name}` : 'My Students')}
+                                {view === 'colleges' ? 'My Colleges' : view === 'faculties' ? (selectedCollege ? `Faculties in ${selectedCollege.name}` : 'My Faculties') : (selectedFaculty ? `Students under ${selectedFaculty.name}` : 'My Students')}
                             </h2>
                             <p className="text-gray-500 font-medium mt-1">
-                                {view === 'faculties' ? 'Manage faculties and view their student progress' : 'Manage and verify student portfolios'}
+                                {view === 'colleges' ? 'Select a college to view its faculties' : view === 'faculties' ? 'Manage faculties and view their student progress' : 'Manage and verify student portfolios'}
                             </p>
                         </div>
                     </div>
@@ -187,10 +217,39 @@ const FacultyDashboard = () => {
                     </div>
                 )}
 
-                {/* Faculties View (Lead Only) */}
-                {view === 'faculties' && (
+                {/* Colleges View (Lead Only) */}
+                {view === 'colleges' && (
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                        {faculties.map((faculty) => (
+                        {user.colleges?.map((college) => (
+                            <div
+                                key={college._id || college}
+                                onClick={() => handleCollegeClick(college)}
+                                className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl hover:border-brand-purple/20 transition-all duration-300 flex flex-col cursor-pointer group relative overflow-hidden"
+                            >
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-brand-purple/5 rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-500"></div>
+                                <div className="flex items-center gap-5 mb-4 relative z-10">
+                                    <div className="bg-gradient-to-tr from-purple-500 to-indigo-400 p-4 rounded-2xl text-white shadow-lg shadow-purple-100 group-hover:rotate-6 transition-transform">
+                                        <FaUniversity className="text-2xl" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-extrabold text-xl text-gray-800 group-hover:text-brand-purple transition-colors">{college.name}</h3>
+                                    </div>
+                                </div>
+                                <div className="mt-auto pt-5 border-t border-gray-50 flex justify-between items-center text-xs font-bold text-brand-purple tracking-widest uppercase relative z-10">
+                                    <span>View College Faculties</span>
+                                    <FaArrowLeft className="rotate-180 group-hover:translate-x-2 transition-transform" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Faculties View (Lead Only) */}
+                {view === 'faculties' && (() => {
+                    const displayedFaculties = selectedCollege ? faculties.filter(f => f.colleges?.some(c => (c._id || c) === (selectedCollege._id || selectedCollege))) : faculties;
+                    return (
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        {displayedFaculties.map((faculty) => (
                             <div
                                 key={faculty._id}
                                 onClick={() => handleFacultyClick(faculty)}
@@ -212,14 +271,15 @@ const FacultyDashboard = () => {
                                 </div>
                             </div>
                         ))}
-                        {faculties.length === 0 && (
+                        {displayedFaculties.length === 0 && (
                             <div className="col-span-full bg-white p-16 rounded-3xl shadow-sm border border-gray-100 text-center">
                                 <FaUserTie className="text-7xl text-gray-200 mx-auto mb-6" />
-                                <p className="text-gray-400 text-xl font-bold italic">No faculties assigned to your college yet.</p>
+                                <p className="text-gray-400 text-xl font-bold italic">No faculties assigned to {selectedCollege ? 'this college' : 'you'} yet.</p>
                             </div>
                         )}
                     </div>
-                )}
+                    );
+                })()}
 
                 {/* Students View */}
                 {view === 'students' && (

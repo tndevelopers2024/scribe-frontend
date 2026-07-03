@@ -230,8 +230,14 @@ const UserDashboard = () => {
                                         <div className="flex-1 min-w-0">
                                             <h4 className="font-bold text-gray-800 text-lg truncate">{faculty.name}</h4>
                                             <p className="text-sm text-gray-600 truncate">{faculty.email}</p>
-                                            {faculty.college && (
-                                                <p className="text-xs text-gray-500 mt-1 truncate">{faculty.college.name}</p>
+                                            {faculty.colleges && faculty.colleges.length > 0 && (
+                                                <div className="flex flex-wrap gap-1 mt-1">
+                                                    {faculty.colleges.map(c => (
+                                                        <span key={c._id || c} className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full truncate">
+                                                            {c.name || 'Unknown College'}
+                                                        </span>
+                                                    ))}
+                                                </div>
                                             )}
                                         </div>
                                     </div>

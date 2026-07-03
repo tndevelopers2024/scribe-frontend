@@ -88,7 +88,7 @@ const ProfileDetails = ({ isFaculty, studentId, studentData }) => {
             const firstName = studentData.profile?.firstName || nameParts[0] || '';
             const lastName = studentData.profile?.lastName || (nameParts.length > 1 ? nameParts[nameParts.length - 1] : '');
             const middleName = studentData.profile?.middleName || (nameParts.length > 2 ? nameParts.slice(1, -1).join(' ') : '');
-            const institution = studentData.profile?.institution || studentData.college?.name || '';
+            const institution = studentData.profile?.institution || studentData.colleges?.[0]?.name || '';
 
             setProfileData({
                 firstName,
@@ -124,7 +124,7 @@ const ProfileDetails = ({ isFaculty, studentId, studentData }) => {
                 const firstName = res.data.profile?.firstName || nameParts[0] || '';
                 const lastName = res.data.profile?.lastName || (nameParts.length > 1 ? nameParts[nameParts.length - 1] : '');
                 const middleName = res.data.profile?.middleName || (nameParts.length > 2 ? nameParts.slice(1, -1).join(' ') : '');
-                const institution = res.data.profile?.institution || res.data.college?.name || '';
+                const institution = res.data.profile?.institution || res.data.colleges?.[0]?.name || '';
 
                 setProfileData({
                     firstName,

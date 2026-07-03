@@ -121,7 +121,9 @@ const Students = () => {
                                             {student.email}
                                         </td>
                                         <td className="py-4 px-4 text-gray-600">
-                                            {student.college?.name || 'N/A'}
+                                            {student.colleges && student.colleges.length > 0 
+                                                ? student.colleges.map(c => c.name || 'Unknown').join(', ') 
+                                                : 'N/A'}
                                         </td>
                                     </tr>
                                 ))}

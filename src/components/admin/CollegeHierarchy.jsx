@@ -24,8 +24,8 @@ const CollegeHierarchy = ({ colleges, users, refreshData }) => {
     const [submitting, setSubmitting] = useState(false);
 
     // Helpers to filter data
-    const getLeads = (collegeId) => users.filter(u => u.role === 'Lead Faculty' && u.college?._id === collegeId);
-    const getFaculties = (leadId) => users.filter(u => u.role === 'Faculty' && (u.leadFaculty?._id === leadId || u.assignedBy === leadId));
+    const getLeads = (collegeId) => users.filter(u => u.role === 'Lead Faculty' && u.colleges?.some(c => (c._id || c) === collegeId));
+    const getFaculties = (leadId) => users.filter(u => u.role === 'Faculty' && (u.leadFaculties?.some(lf => (lf._id || lf) === leadId) || u.assignedBy === leadId));
     const getStudents = (facultyId) => users.filter(u => u.role === 'Student' && (u.faculty?._id === facultyId || u.assignedBy === facultyId));
 
     // Stats Helper
@@ -121,7 +121,7 @@ const CollegeHierarchy = ({ colleges, users, refreshData }) => {
     const handlePromote = async () => {
         if (!promoteModal.faculty) return;
         const faculty = promoteModal.faculty;
-        const collegeId = faculty.college?._id || faculty.college || selectedCollege?._id;
+        const collegeId = faculty.colleges?.[0]?._id || faculty.colleges?.[0] || selectedCollege?._id;
 
         if (!collegeId) {
             toast.error("College association not found");
@@ -347,13 +347,13 @@ const CollegeHierarchy = ({ colleges, users, refreshData }) => {
                                     </div>
                                     <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
                                         <FaChalkboardTeacher className="text-pink-500" />
-                                        {users.filter(u => u.role === 'Faculty' && (u.college?._id === college._id || u.college === college._id)).length} Faculties
+                                        {users.filter(u => u.role === 'Faculty' && u.colleges?.some(c => (c._id || c) === college._id)).length} Faculties
                                     </div>
                                     <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
                                         <FaUserGraduate className="text-brand-purple" />
                                         {college.name.toLowerCase() === 'panimalar medical college'
                                             ? 200
-                                            : users.filter(u => u.role === 'Student' && u.email !== 'madhavangl20@gmail.com' && (u.college?._id === college._id || u.college === college._id)).length} Students
+                                            : users.filter(u => u.role === 'Student' && u.email !== 'madhavangl20@gmail.com' && u.colleges?.some(c => (c._id || c) === college._id)).length} Students
                                     </div>
                                     <FaArrowRight className="text-gray-300 group-hover:text-brand-purple group-hover:translate-x-2 transition-all absolute bottom-8 right-8" />
                                 </div>
@@ -639,7 +639,7 @@ const CollegeHierarchy = ({ colleges, users, refreshData }) => {
                                     // Can reassign to any other Lead Faculty
                                     const otherLeads = users.filter(u => u.role === 'Lead Faculty' && u._id !== reassignModal.currentLeadId);
                                     // OR promote any Faculty currently in this college
-                                    const collegeFaculties = users.filter(u => u.role === 'Faculty' && (u.college?._id === reassignModal.id || u.college === reassignModal.id));
+                                    const collegeFaculties = users.filter(u => u.role === 'Faculty' && u.colleges?.some(c => (c._id || c) === reassignModal.id));
                                     eligibleUsers = [...otherLeads, ...collegeFaculties];
                                 } else {
                                     // Reassigning a Faculty member to a different Lead

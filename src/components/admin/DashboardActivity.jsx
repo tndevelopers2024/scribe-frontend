@@ -16,10 +16,10 @@ const DashboardActivity = ({ users = [], colleges = [] }) => {
         // Usually Faculty -> Lead Faculty -> College
 
         // Check direct college
-        if ((u.college?._id || u.college) === selectedCollege) return true;
+        if (u.colleges?.some(c => (c._id || c) === selectedCollege)) return true;
 
         // Check lead faculty's college if available
-        if (u.leadFaculty && (u.leadFaculty.college === selectedCollege || u.leadFaculty.college?._id === selectedCollege)) return true;
+        if (u.leadFaculties?.some(lf => lf.colleges?.some(c => (c._id || c) === selectedCollege))) return true;
 
         return false;
     });
@@ -32,8 +32,8 @@ const DashboardActivity = ({ users = [], colleges = [] }) => {
 
         // College Filter
         if (selectedCollege !== 'all') {
-            const studentCollegeId = u.college?._id || u.college;
-            if (studentCollegeId !== selectedCollege) return false;
+            const isInCollege = u.colleges?.some(c => (c._id || c) === selectedCollege);
+            if (!isInCollege) return false;
         }
 
         // Faculty Filter
@@ -172,7 +172,7 @@ const DashboardActivity = ({ users = [], colleges = [] }) => {
                             {users.filter(u => {
                                 if (u.role !== 'Lead Faculty') return false;
                                 if (selectedCollege === 'all') return true;
-                                return (u.college?._id || u.college) === selectedCollege;
+                                return u.colleges?.some(c => (c._id || c) === selectedCollege);
                             }).length}
                         </h4>
                     </div>

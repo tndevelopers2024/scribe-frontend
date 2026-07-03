@@ -22,7 +22,7 @@ const SuperAdminDashboard = () => {
     // Forms State
     const [collegeForm, setCollegeForm] = useState({ name: '', location: '' });
     const [leadForm, setLeadForm] = useState({ name: '', email: '', collegeId: '' });
-    const [facultyForm, setFacultyForm] = useState({ name: '', email: '', leadFacultyId: '' });
+    const [facultyForm, setFacultyForm] = useState({ name: '', email: '', collegeId: '', leadFacultyId: '' });
     const [studentForm, setStudentForm] = useState({ name: '', email: '', collegeId: '' });
     const [adminForm, setAdminForm] = useState({ name: '', email: '' });
     const [submitting, setSubmitting] = useState(false);
@@ -72,7 +72,7 @@ const SuperAdminDashboard = () => {
                 }
             } else if (type === 'faculty') {
                 res = await axios.post(API_ENDPOINTS.FACULTY, facultyForm, config);
-                setFacultyForm({ name: '', email: '', leadFacultyId: '' });
+                setFacultyForm({ name: '', email: '', collegeId: '', leadFacultyId: '' });
                 if (res.data.emailSent) {
                     toast.success(res.data.message || 'Faculty created and email sent successfully');
                 } else {
@@ -200,7 +200,7 @@ const SuperAdminDashboard = () => {
 
     // Filter faculties for bulk upload dropdown based on selected college
     const bulkFaculties = bulkCollegeId 
-        ? faculties.filter(f => (f.college?._id || f.college) === bulkCollegeId) 
+        ? faculties.filter(f => f.colleges?.some(c => (c._id || c) === bulkCollegeId)) 
         : [];
 
     const handleFacultyChange = (index, facultyId) => {
@@ -375,10 +375,19 @@ const SuperAdminDashboard = () => {
                                         <input type="email" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none" value={facultyForm.email} onChange={e => setFacultyForm({ ...facultyForm, email: e.target.value })} required />
                                     </div>
                                     <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">College</label>
+                                        <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none bg-white" value={facultyForm.collegeId} onChange={e => setFacultyForm({ ...facultyForm, collegeId: e.target.value, leadFacultyId: '' })} required>
+                                            <option value="">Select College</option>
+                                            {colleges.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Reporting To (Lead Faculty)</label>
-                                        <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none bg-white" value={facultyForm.leadFacultyId} onChange={e => setFacultyForm({ ...facultyForm, leadFacultyId: e.target.value })} required>
-                                            <option value="">Select Reporting Lead Faculty</option>
-                                            {leadFaculties.map(l => <option key={l._id} value={l._id}>{l.name} ({l.email})</option>)}
+                                        <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-purple/50 focus:outline-none bg-white" value={facultyForm.leadFacultyId} onChange={e => setFacultyForm({ ...facultyForm, leadFacultyId: e.target.value })} required disabled={!facultyForm.collegeId}>
+                                            <option value="">{facultyForm.collegeId ? "Select Reporting Lead Faculty" : "Select a College First"}</option>
+                                            {leadFaculties
+                                                .filter(l => facultyForm.collegeId && l.colleges?.some(c => (c._id || c) === facultyForm.collegeId))
+                                                .map(l => <option key={l._id} value={l._id}>{l.name} ({l.email})</option>)}
                                         </select>
                                     </div>
                                     <button
