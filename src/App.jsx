@@ -17,7 +17,7 @@ import { Toaster } from 'react-hot-toast';
 function App() {
   return (
     <AuthProvider>
-      <Toaster position="top-right" />
+      <Toaster position="top-right" containerStyle={{ zIndex: 999999 }} />
       <Router>
         <ScrollToTop />
         <div className="flex flex-col min-h-screen overflow-x-hidden">

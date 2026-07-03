@@ -25,8 +25,8 @@ const CollegeHierarchy = ({ colleges, users, refreshData }) => {
 
     // Helpers to filter data
     const getLeads = (collegeId) => users.filter(u => u.role === 'Lead Faculty' && u.colleges?.some(c => (c._id || c) === collegeId));
-    const getFaculties = (leadId) => users.filter(u => u.role === 'Faculty' && (u.leadFaculties?.some(lf => (lf._id || lf) === leadId) || u.assignedBy === leadId));
-    const getStudents = (facultyId) => users.filter(u => u.role === 'Student' && (u.faculty?._id === facultyId || u.assignedBy === facultyId));
+    const getFaculties = (leadId) => users.filter(u => u.role === 'Faculty' && (u.leadFaculties?.some(lf => (lf._id || lf) === leadId) || u.assignedBy === leadId) && (selectedCollege ? u.colleges?.some(c => (c._id || c) === selectedCollege._id) : true));
+    const getStudents = (facultyId) => users.filter(u => u.role === 'Student' && (u.faculty?._id === facultyId || u.assignedBy === facultyId) && (selectedCollege ? u.colleges?.some(c => (c._id || c) === selectedCollege._id) : true));
 
     // Stats Helper
     const getStudentStats = (student) => {

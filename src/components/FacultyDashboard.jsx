@@ -52,7 +52,12 @@ const FacultyDashboard = () => {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
             const res = await axios.get(API_ENDPOINTS.FACULTY_STUDENTS, config);
             setStudents(res.data);
-            setView('students');
+            if (user?.colleges?.length > 1) {
+                setView('colleges');
+            } else {
+                if (user?.colleges?.length === 1) setSelectedCollege(user.colleges[0]);
+                setView('students');
+            }
             setError('');
         } catch (err) {
             console.error(err);
@@ -64,7 +69,11 @@ const FacultyDashboard = () => {
 
     const handleCollegeClick = (college) => {
         setSelectedCollege(college);
-        setView('faculties');
+        if (user?.role === 'Lead Faculty') {
+            setView('faculties');
+        } else {
+            setView('students');
+        }
     };
 
     const handleFacultyClick = async (faculty) => {
@@ -90,6 +99,11 @@ const FacultyDashboard = () => {
                 setSelectedFaculty(null);
                 setStudents([]);
             } else if (view === 'faculties' && user.colleges?.length > 1) {
+                setView('colleges');
+                setSelectedCollege(null);
+            }
+        } else {
+            if (view === 'students' && user?.colleges?.length > 1) {
                 setView('colleges');
                 setSelectedCollege(null);
             }
@@ -137,12 +151,12 @@ const FacultyDashboard = () => {
                 <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
                     <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 px-2">Menu</h3>
                     <div className="space-y-3">
-                        {user?.role === 'Lead Faculty' && user.colleges?.length > 1 && (
+                        {user?.colleges?.length > 1 && (
                             <button
                                 onClick={() => {
                                     setView('colleges');
                                     setSelectedCollege(null);
-                                    setSelectedFaculty(null);
+                                    if (user?.role === 'Lead Faculty') setSelectedFaculty(null);
                                 }}
                                 className={`w-full text-left px-5 py-3.5 rounded-xl font-bold transition-all duration-300 flex items-center gap-3 ${view === 'colleges' ? 'bg-gradient-to-r from-brand-purple to-brand-pink text-white shadow-lg shadow-purple-100' : 'text-gray-500 hover:bg-gray-50'}`}
                             >
@@ -236,7 +250,7 @@ const FacultyDashboard = () => {
                                     </div>
                                 </div>
                                 <div className="mt-auto pt-5 border-t border-gray-50 flex justify-between items-center text-xs font-bold text-brand-purple tracking-widest uppercase relative z-10">
-                                    <span>View College Faculties</span>
+                                    <span>{user?.role === 'Lead Faculty' ? 'View College Faculties' : 'View College Students'}</span>
                                     <FaArrowLeft className="rotate-180 group-hover:translate-x-2 transition-transform" />
                                 </div>
                             </div>
